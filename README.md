@@ -8,18 +8,25 @@ Endereço: https://fabianofca26-creator.github.io/Controle_estoque/
 
 ## Como funciona
 
-- **Ajustes**: módulos (quantas casas tipo 1 e tipo 2), locais de armazenamento,
-  importação da planilha de quantitativos (consumo por casa de cada material).
-- **Compras**: o que precisa comprar → solicitação (com o número do Sienge) →
-  pedido importado do PDF do Sienge, ligado à solicitação → recebimento total
-  ou parcial. Item do pedido que o app não reconhece você liga a um material
-  uma vez; ele lembra nos próximos pedidos.
-- **Saída**: pra um módulo ou transferência pra outra obra.
+- **Ajustes**: módulos (quantas casas tipo 1 e tipo 2), fornecedores com prazo
+  de entrega, locais de armazenamento, ponto de partida do controle.
+- **Obra**: serviços da sequência construtiva, agrupados por etapa, cada um com
+  os materiais por casa (tipo 1 e 2) e o serviço que vem antes. O andamento é
+  um número por serviço e módulo: quantas casas já estão prontas.
+- **Compras**: indicação do que comprar → solicitação (com o número do Sienge)
+  → pedido importado do PDF do Sienge, ligado à solicitação → recebimento
+  total ou parcial. Item do pedido que o app não reconhece você liga a um
+  material uma vez; ele lembra nos próximos pedidos.
+- **Saída**: pra um módulo (serviço opcional) ou transferência pra outra obra.
 - **Conferir**: conta o que tem em cada local; a diferença vira ajuste e o
-  material marca a data da conferência.
+  material marca a data da conferência. A primeira conferência é o estoque
+  inicial.
 
-Precisa comprar = falta usar nos módulos − estoque − pedidos a chegar −
-solicitações ainda sem pedido.
+Indicação de compra: casas que faltam × quantidade por casa, por serviço. Cada
+casa que falta tem uma distância da frente (0 = o serviço anterior já está
+pronto, 1 = falta 1 serviço antes, ...). O que tem em estoque, a chegar e
+solicitado é reservado primeiro pra demanda mais próxima; só o que fica
+descoberto aparece, filtrado por horizonte, módulo, etapa e serviço.
 
 ## Google Drive
 

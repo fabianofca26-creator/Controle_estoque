@@ -32,6 +32,7 @@
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:90px}
 h1,h2,h3{font-weight:600;margin:0}
 button{font:inherit;color:inherit}
+a{color:var(--tx);text-decoration-color:var(--tx3)}
 .wrap{max-width:620px;margin:0 auto;padding:0 14px}
 header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 0 10px;display:flex;align-items:center;gap:10px}
 header .t{flex:1;min-width:0}
@@ -48,7 +49,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offs
 input[type=checkbox]{width:22px;height:22px;flex:none;margin:0}
 .field{margin-bottom:12px}
 .row{display:flex;gap:8px;align-items:center}
-.row>*{flex:1}
+.row>*{flex:1;min-width:0}
 .row>.n{flex:none}
 .btn{width:100%;background:var(--ac);color:var(--ac-tx);border:0;border-radius:10px;padding:13px;font-size:16px;font-weight:600;cursor:pointer}
 .btn:active{opacity:.85}
@@ -56,8 +57,8 @@ input[type=checkbox]{width:22px;height:22px;flex:none;margin:0}
 .btn.sec{background:transparent;color:var(--tx);border:1px solid var(--line2);font-weight:400;padding:11px}
 .btn.sm{width:auto;padding:9px 13px;font-size:14px}
 .btn.dan{background:transparent;color:var(--er-tx);border:1px solid var(--er-tx);font-weight:400;padding:11px}
-.seg{display:flex;gap:6px;margin:0 0 12px}
-.seg button{flex:1;background:transparent;border:1px solid var(--line2);border-radius:10px;padding:9px 4px;font-size:14px;cursor:pointer;white-space:nowrap}
+.seg{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto}
+.seg button{flex:1;background:transparent;border:1px solid var(--line2);border-radius:10px;padding:9px 8px;font-size:14px;cursor:pointer;white-space:nowrap}
 .seg button[aria-pressed=true]{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
 .it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .it:last-child{border-bottom:0}
@@ -81,15 +82,17 @@ th{font-size:12px;color:var(--tx3);font-weight:500}
 .hide{display:none!important}
 h2{font-size:15px;margin:18px 0 8px;color:var(--tx2)}
 h3{margin-bottom:12px}
+.card h4{margin:0 0 4px;font-size:15px}
 dialog{border:0;border-radius:var(--r);padding:18px;width:min(94vw,560px);max-height:92vh;background:var(--card);color:var(--tx)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;border:0;padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--tx3);cursor:pointer}
+nav button{flex:1;background:none;border:0;padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--tx3);cursor:pointer;min-width:0}
 nav button[aria-current=true]{color:var(--ac);font-weight:600}
-.cnt{width:90px;flex:none;text-align:right;padding:8px}
-a{color:var(--tx);text-decoration-color:var(--tx3)}
+.cnt{width:84px;flex:none;text-align:right;padding:8px}
 .map{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
 .map.pend{border-color:var(--wa-tx)}
+.filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.filtros select,.filtros input{padding:9px 10px;font-size:14px}
 @media print{
   header,nav,.noprint{display:none!important}
   body{padding:0;background:#fff;color:#000}
@@ -109,20 +112,20 @@ a{color:var(--tx);text-decoration-color:var(--tx3)}
 
 <nav id="nav">
   <button data-t="painel" onclick="ir('painel')"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Painel</button>
+  <button data-t="obra" onclick="ir('obra')"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>Obra</button>
   <button data-t="materiais" onclick="ir('materiais')"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Materiais</button>
   <button data-t="compras" onclick="ir('compras')"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>Compras</button>
   <button data-t="conferir" onclick="ir('conferir')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Conferir</button>
-  <button data-t="ajustes" onclick="ir('ajustes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
+  <button data-t="ajustes" onclick="ir('ajustes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ajustes</button>
 </nav>
 
 <dialog id="D"></dialog>
 <input type="file" id="fPdf" accept="application/pdf" class="hide" onchange="importarPdf(this.files[0]); this.value=''">
-<input type="file" id="fXls" accept=".xlsx,.xls" class="hide" onchange="importarQuant(this.files[0]); this.value=''">
 <input type="file" id="fBk" accept=".json" class="hide" onchange="importarBackup(this.files[0]); this.value=''">
 
 <script>
-// ---------- leitura do pedido (PDF do Sienge) e da planilha de quantitativos ----------
-// Funções puras: o parser.test.mjs roda elas no Node com os arquivos reais.
+// ---------- leitura do pedido (PDF do Sienge) ----------
+// Função pura: o parser.test.mjs roda ela no Node com os PDFs reais.
 // <parser>
 // O Sienge gera dois modelos: "Emissão de Pedido de Compra" (cada item numa linha)
 // e "Ordem de Compra" (item "COD - NOME" com o complemento nas linhas de baixo e a
@@ -177,44 +180,24 @@ function lerPedido(paginas) {
   });
   return p;
 }
-// Planilha de quantitativos: cada aba tem à direita um bloco por modelo de casa
-// (MODELO, FASE, Insumo, Unidade, "Quantidade de insumos em projeto" = por casa,
-// CÓDIGO SIENGE). As colunas mudam de lugar entre abas, então acha pelo cabeçalho.
-function lerQuantitativo(abas) {
-  const out = [];
-  const n = v => String(v ?? "").replace(/\s+/g, " ").trim().toUpperCase();
-  for (const { nome: aba, linhas } of abas) {
-    const h = (linhas[0] || []).map(n);
-    const cM = h.indexOf("MODELO");
-    const ini = cM >= 0 ? cM : h.indexOf("ITEM", 1); // sem MODELO: o bloco começa no segundo "Item"
-    if (ini < 0) continue;
-    const col = re => h.findIndex((c, j) => j >= ini && re.test(c));
-    const cF = col(/^FASE$/), cI = col(/^INSUMO/), cU = col(/^UNIDADE/), cQ = col(/^QUANTIDADE DE INSUMOS/), cC = col(/^C[OÓ]DIGO/);
-    if (cI < 0 || cQ < 0) continue;
-    // aba sem nenhuma linha do modelo 2 = o material é igual nos dois tipos (modelo 0)
-    const temM2 = cM >= 0 && linhas.some((l, i) => i && +l[cM] === 2);
-    for (const l of linhas.slice(1)) {
-      const qtd = +l[cQ], nome = String(l[cI] ?? "").replace(/\s+/g, " ").trim();
-      // só linhas com MODELO (ou Item) preenchido: abaixo da tabela tem rascunhos de conta
-      if (!(+l[ini] > 0) || !nome || !(qtd > 0)) continue;
-      out.push({ aba, modelo: temM2 ? +l[cM] || 1 : 0, fase: cF >= 0 ? String(l[cF] ?? "").trim() : "", nome,
-        un: cU >= 0 ? String(l[cU] ?? "").trim() : "", cod: cC >= 0 ? String(l[cC] ?? "").replace(/\s+/g, "") : "", qtd });
-    }
-  }
-  return out;
-}
 // </parser>
 
 // ---------- dados ----------
-// material: {id, nome, cod ("797-2"), un, grupo, c1, c2 (consumo por casa tipo 1/2, na unidade da planilha),
-//            unQ (unidade da planilha), fator (planilha × fator = unidade do estoque), locais:[id], conf (data), apelidos:[chave do pedido]}
-// mov: {id, data, tipo: entrada|saida|transf|ajuste|anterior, mat, qtd, mod?, obra?, ped?, obs?}
-//   ajuste guarda a diferença com sinal; "anterior" = já usado no módulo antes do app (não mexe no estoque)
+// material: {id, nome, cod ("797-2"), un, fator (quantidade por casa × fator = unidade do estoque),
+//            forn (fornecedor), locais:[id], conf (data da última conferência), apelidos:[chave do item no pedido]}
+// servico: {id, nome, etapa, apos (serviço que vem antes; "" = começa livre), itens:[{mat, q1, q2}]} — a ordem do array é a sequência
+// modulo: {id, nome, t1, t2, feitas:{servico: casas prontas}, base:{servico: casas prontas antes do controle de estoque}}
+// mov: {id, data, tipo: entrada|saida|transf|ajuste, mat, qtd, mod?, serv?, obra?, ped?, obs?} — ajuste guarda a diferença com sinal
 // solic: {id, num, data, obs, fechada, itens:[{mat, qtd}]}
 // pedido: {id, num, data, fornecedor, obra, etapa, solic, fechado, itens:[{mat, qtd, prev, desc}]}
+// fornecedor: {id, nome, prazo (dias)}
 const KEY = "estoque-obra";
-const vazio = () => ({ materiais: [], locais: [], modulos: [], movs: [], solics: [], pedidos: [], config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
-function migrar(d) { const v = vazio(); for (const k in v) d[k] ??= v[k]; return d; }
+const vazio = () => ({ materiais: [], servicos: [], locais: [], modulos: [], fornecedores: [], movs: [], solics: [], pedidos: [], config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
+function migrar(d) {
+  const v = vazio(); for (const k in v) d[k] ??= v[k];
+  d.modulos.forEach(o => { o.feitas ??= {}; o.base ??= {}; });
+  return d;
+}
 let S = migrar(JSON.parse(localStorage.getItem(KEY) || "null") || vazio());
 function save() { S.meta.salvoEm = new Date().toISOString(); localStorage.setItem(KEY, JSON.stringify(S)); agendarSync(); }
 
@@ -225,21 +208,42 @@ const dias = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
 const fN = v => (+v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const mat = id => S.materiais.find(m => m.id === id);
+const serv = id => S.servicos.find(s => s.id === id);
+const modu = id => S.modulos.find(o => o.id === id);
 const nomeMat = id => mat(id)?.nome || "(material removido)";
 const unMat = id => mat(id)?.un || "";
 const chaveItem = it => it.cod + "|" + (it.nome + " " + it.comp).replace(/\s+/g, " ").trim().toUpperCase();
 const rotuloMat = m => (m.cod ? m.cod + " · " : "") + m.nome;
 const porNome = (a, b) => a.nome.localeCompare(b.nome);
-const previsto = (m, mod) => ((+mod.t1 || 0) * (+m.c1 || 0) + (+mod.t2 || 0) * (+m.c2 || 0)) * (+m.fator || 1);
+const etapas = () => [...new Set(S.servicos.map(s => s.etapa || "Sem etapa"))];
+const prazoDe = m => S.fornecedores.find(f => f.id === m?.forn);
+
+// ---------- andamento ----------
+const totCasas = o => (+o.t1 || 0) + (+o.t2 || 0);
+const feitas = (o, s) => Math.min(totCasas(o), +o.feitas?.[s.id] || 0);
+// ponytail: o andamento é um número por serviço (não separa tipo 1 e 2), então a quantidade
+// por casa é a média do módulo. Se precisar, guardar as casas prontas por tipo.
+const porCasa = (it, o) => { const t = totCasas(o); return t ? ((+o.t1 || 0) * (+it.q1 || 0) + (+o.t2 || 0) * (+it.q2 || 0)) / t * (+mat(it.mat)?.fator || 1) : 0; };
+function cadeia(s) { const c = [s]; while (c.at(-1).apos) { const p = serv(c.at(-1).apos); if (!p || c.includes(p)) break; c.push(p); } return c; }
+// casas que faltam fazer o serviço, por distância da frente: [0] = já liberadas (o serviço
+// anterior está pronto), [1] = esperando 1 serviço, ... o último nível são as que nem começaram a cadeia
+function niveis(o, s) {
+  const c = cadeia(s), f = c.map(x => feitas(o, x));
+  return c.map((_, k) => Math.max(0, (k + 1 < c.length ? f[k + 1] : totCasas(o)) - f[k]));
+}
+const HORIZ = [[0, "Só frente liberada"], [1, "Frente + 1 serviço"], [2, "Frente + 2 serviços"], [3, "Frente + 3 serviços"], [99, "Tudo que falta"]];
+const rotNivel = k => k === 0 ? "frente liberada" : `daqui a ${k} serviço${k > 1 ? "s" : ""}`;
 
 // ---------- contas ----------
-// comprar = falta usar nos módulos − estoque − pedido a chegar − solicitação ainda sem pedido
+// Demanda = casas que faltam × quantidade por casa, por módulo/serviço/nível.
+// O que tem (estoque + a chegar + solicitado) é reservado primeiro pra demanda mais próxima
+// (nível menor, depois ordem da sequência); o que sobra sem cobertura é o que falta comprar.
 function calc() {
   const soma = (o, k, v) => o[k] = (o[k] || 0) + v;
-  const saldo = {}, saidoMod = {}, receb = {}, pedidoSol = {}, aChegar = {}, solAberta = {}, falta = {}, comprar = {};
+  const saldo = {}, saiu = {}, receb = {}, pedidoSol = {}, aChegar = {}, solAberta = {}, falta = {}, esperado = {}, disp = {};
   for (const m of S.movs) {
-    if (m.tipo !== "anterior") soma(saldo, m.mat, m.tipo === "entrada" || m.tipo === "ajuste" ? m.qtd : -m.qtd);
-    if ((m.tipo === "saida" || m.tipo === "anterior") && m.mod) soma(saidoMod, m.mod + "|" + m.mat, m.qtd);
+    soma(saldo, m.mat, m.tipo === "entrada" || m.tipo === "ajuste" ? m.qtd : -m.qtd);
+    if (m.tipo === "saida" && m.mod) soma(saiu, m.mod + "|" + m.mat, m.qtd);
     if (m.tipo === "entrada" && m.ped) soma(receb, m.ped + "|" + m.mat, m.qtd);
   }
   for (const p of S.pedidos) for (const it of p.itens) {
@@ -251,15 +255,29 @@ function calc() {
     const f = it.qtd - (pedidoSol[s.id + "|" + it.mat] || 0);
     if (f > 0) soma(solAberta, it.mat, f);
   }
-  for (const m of S.materiais) for (const mod of S.modulos) {
-    const f = previsto(m, mod) - (saidoMod[mod.id + "|" + m.id] || 0);
-    if (f > 0) soma(falta, m.id, f);
+  const dem = [];
+  S.modulos.forEach((o, mi) => S.servicos.forEach((s, si) => {
+    const nv = niveis(o, s);
+    for (const it of s.itens) {
+      const q = porCasa(it, o); if (!(q > 0)) continue;
+      nv.forEach((casas, nivel) => casas > 0 && dem.push({ mod: o.id, sv: s.id, mat: it.mat, nivel, casas, qtd: casas * q, ord: si, mi }));
+      soma(esperado, o.id + "|" + it.mat, Math.max(0, feitas(o, s) - (+o.base?.[s.id] || 0)) * q);
+    }
+  }));
+  dem.sort((a, b) => a.nivel - b.nivel || a.ord - b.ord || a.mi - b.mi);
+  for (const m of S.materiais) disp[m.id] = Math.max(0, saldo[m.id] || 0) + (aChegar[m.id] || 0) + (solAberta[m.id] || 0);
+  for (const d of dem) {
+    soma(falta, d.mat, d.qtd);
+    const usa = Math.min(disp[d.mat] || 0, d.qtd);
+    disp[d.mat] = (disp[d.mat] || 0) - usa; d.falta = d.qtd - usa;
   }
-  for (const m of S.materiais) {
-    const c = (falta[m.id] || 0) - Math.max(0, saldo[m.id] || 0) - (aChegar[m.id] || 0) - (solAberta[m.id] || 0);
-    if (c > 1e-6) comprar[m.id] = c;
-  }
-  return { saldo, saidoMod, receb, pedidoSol, aChegar, solAberta, falta, comprar };
+  return { saldo, saiu, receb, pedidoSol, aChegar, solAberta, falta, esperado, dem };
+}
+// falta comprar por material até o horizonte escolhido
+function comprarAte(C, hz) {
+  const r = {};
+  for (const d of C.dem) if (d.nivel <= hz && d.falta > 1e-6) r[d.mat] = (r[d.mat] || 0) + d.falta;
+  return r;
 }
 // pedido: quanto falta chegar por item e o estado
 function estadoPedido(p, C) {
@@ -269,14 +287,14 @@ function estadoPedido(p, C) {
   const st = p.fechado ? (falta ? "encerrado" : "recebido") : !falta ? "recebido" : algum ? "parcial" : "aguardando";
   return { itens, st, atrasado };
 }
-const tagPedido = (e) => `<span class="tag ${e.st === "recebido" ? "ok" : e.st === "encerrado" ? "" : "wa"}">${e.st}</span>${e.atrasado ? '<span class="tag er">atrasado</span>' : ""}`;
+const tagPedido = e => `<span class="tag ${e.st === "recebido" ? "ok" : e.st === "encerrado" ? "" : "wa"}">${e.st}</span>${e.atrasado ? '<span class="tag er">atrasado</span>' : ""}`;
 
 // ---------- navegação ----------
 let tela = "painel", sel = null, pilha = [];
-let aba = { materiais: "lista", compras: "comprar" }, busca = "", grupoSel = "", localConf = "";
+let aba = { materiais: "lista", compras: "comprar", hz: 1, mod: "", fMod: "", fEtapa: "", fServ: "", fBusca: "" }, busca = "", etapaSel = "", localConf = "";
+const ABAS = ["painel", "obra", "materiais", "compras", "conferir", "ajustes"];
 function ir(t, id) {
-  if (["painel", "materiais", "compras", "conferir", "ajustes"].includes(t)) pilha = [];
-  else pilha.push([tela, sel]);
+  if (ABAS.includes(t)) pilha = []; else pilha.push([tela, sel]);
   tela = t; sel = id ?? null; render(); scrollTo(0, 0);
 }
 function voltar() { [tela, sel] = pilha.pop() || ["painel", null]; render(); }
@@ -285,25 +303,25 @@ function render() {
   btVoltar.classList.toggle("hide", !pilha.length);
   nav.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.t === (pilha[0]?.[0] || tela)));
   subtit.textContent = "";
-  app.innerHTML = { painel, materiais, material, compras, solic, pedido, conferir, ajustes }[tela](C);
+  app.innerHTML = { painel, obra, servico, materiais, material, compras, solic, pedido, conferir, ajustes }[tela](C);
   if (tela === "materiais") listaMat(C);
   cabecalho();
 }
 function titulo(t, s) { document.getElementById("titulo").textContent = t; subtit.textContent = s || ""; }
+const xis = `<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
 
 // ---------- painel ----------
 function painel(C) {
-  titulo("Estoque da Obra", S.materiais.length + " materiais");
-  if (!S.materiais.length) return `<div class="card"><p>Comece por <b>Ajustes</b>: cadastre os módulos (casas tipo 1 e tipo 2), os locais de armazenamento e importe a planilha de quantitativos.</p>
-    <p class="muted">Depois, em <b>Compras</b>, importe os pedidos do Sienge em PDF.</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
-  const comprar = Object.entries(C.comprar).sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0])));
+  titulo("Estoque da Obra", S.materiais.length + " materiais · " + S.servicos.length + " serviços");
+  if (!S.materiais.length) return `<div class="card"><p>Comece importando o backup inicial (<b>Ajustes → Backup → Importar</b>), ou cadastre módulos, locais e serviços em Ajustes e Obra.</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
+  const comprar = Object.entries(comprarAte(C, aba.hz)).sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0])));
   const atrasados = S.pedidos.map(p => [p, estadoPedido(p, C)]).filter(([, e]) => e.atrasado);
   const semConf = S.materiais.filter(m => (C.saldo[m.id] || 0) > 0).sort((a, b) => (a.conf || "").localeCompare(b.conf || "")).slice(0, 8);
   const ub = S.meta.backup;
   return `<div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida()">Lançar saída</button></div>
-  <div class="card"><div class="row"><h3 style="margin:0">Precisa comprar</h3><span class="n big">${comprar.length}</span></div>
-    ${comprar.slice(0, 8).map(([id, q]) => `<div class="it" onclick="ir('material','${id}')"><span class="lb">${esc(nomeMat(id))}</span><span class="q">${fN(q)} ${esc(unMat(id))}</span></div>`).join("") || `<p class="muted">Nada por enquanto.</p>`}
-    ${comprar.length ? `<button class="btn sec" style="margin-top:8px" onclick="aba.compras='comprar';ir('compras')">Ver tudo e gerar solicitação</button>` : ""}</div>
+  <div class="card"><div class="row"><div><h3 style="margin:0">Precisa comprar</h3><span class="sub">${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())}</span></div><span class="n big">${comprar.length}</span></div>
+    ${comprar.slice(0, 8).map(([id, q]) => `<div class="it" onclick="ir('material','${id}')"><span class="lb">${esc(nomeMat(id))}${prazoDe(mat(id))?.prazo ? `<small>prazo ${prazoDe(mat(id)).prazo} dias</small>` : ""}</span><span class="q">${fN(q)} ${esc(unMat(id))}</span></div>`).join("") || `<p class="muted">Nada por enquanto.</p>`}
+    ${comprar.length ? `<button class="btn sec" style="margin-top:8px" onclick="aba.compras='comprar';ir('compras')">Ver por serviço e gerar solicitação</button>` : ""}</div>
   ${atrasados.length ? `<div class="card"><h3>Pedidos atrasados</h3>${atrasados.map(([p]) => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span><span class="tag er">atrasado</span></div>`).join("")}</div>` : ""}
   <div class="card"><h3>Há mais tempo sem conferir</h3>
     ${semConf.map(m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(locaisDe(m))}</small></span><span class="q">${m.conf ? "há " + dias(m.conf, hoje()) + " dias" : '<span class="tag wa">nunca</span>'}</span></div>`).join("") || `<p class="muted">Nenhum material com saldo.</p>`}
@@ -312,21 +330,85 @@ function painel(C) {
 }
 const locaisDe = m => (m.locais || []).map(id => S.locais.find(l => l.id === id)?.nome).filter(Boolean).join(", ") || "sem local";
 
+// ---------- obra: andamento por módulo e serviço ----------
+function obra() {
+  titulo("Obra", "casas prontas por serviço");
+  if (!S.modulos.length) return `<div class="card"><p>Cadastre os módulos em Ajustes (quantas casas tipo 1 e tipo 2 cada um tem).</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
+  if (!modu(aba.mod)) aba.mod = S.modulos[0].id;
+  const o = modu(aba.mod), tot = totCasas(o);
+  return `${S.modulos.length > 1 ? `<div class="seg">${S.modulos.map(x => `<button aria-pressed="${x.id === o.id}" onclick="aba.mod='${x.id}';render()">${esc(x.nome)}</button>`).join("")}</div>` : ""}
+  <p class="muted" style="margin-top:0">${esc(o.nome)}: ${tot} casas. Digite quantas já estão prontas em cada serviço.</p>
+  ${etapas().map(e => `<h2>${esc(e)}</h2><div class="card">${S.servicos.filter(s => (s.etapa || "Sem etapa") === e).map(s => {
+    const fr = niveis(o, s)[0], f = feitas(o, s);
+    return `<div class="it" style="cursor:default"><span class="lb" style="cursor:pointer" onclick="ir('servico','${s.id}')"><u style="text-decoration-color:var(--tx3)">${esc(s.nome)}</u>
+      <small>${f >= tot ? '<span class="tag ok">concluído</span>' : fr ? `<span class="tag wa">${fr} liberada${fr > 1 ? "s" : ""}</span>` : "aguardando serviço anterior"} · ${s.itens.length} materiais</small></span>
+      <input class="cnt" type="number" min="0" max="${tot}" value="${f}" aria-label="Casas prontas" onchange="modu('${o.id}').feitas['${s.id}']=Math.min(${tot},Math.max(0,+this.value||0));save();render()"><span class="n muted">/${tot}</span></div>`;
+  }).join("")}</div>`).join("") || `<p class="empty">Nenhum serviço cadastrado.</p>`}
+  <button class="btn sec" onclick="novoServico()">+ Serviço</button>`;
+}
+function novoServico() {
+  const n = prompt("Nome do serviço:"); if (!n?.trim()) return;
+  const s = { id: uid(), nome: n.trim(), etapa: S.servicos.at(-1)?.etapa || "", apos: S.servicos.at(-1)?.id || "", itens: [] };
+  S.servicos.push(s); save(); ir("servico", s.id);
+}
+function servico(C) {
+  const s = serv(sel); if (!s) { voltar(); return ""; }
+  titulo(s.nome, s.etapa);
+  const i = S.servicos.indexOf(s);
+  return `<div class="card">
+    <div class="field"><label>Nome</label><input value="${esc(s.nome)}" onchange="serv('${s.id}').nome=this.value.trim();save();render()"></div>
+    <div class="field"><label>Etapa</label><input list="dlEtapas" value="${esc(s.etapa)}" onchange="serv('${s.id}').etapa=this.value.trim();save();render()"><datalist id="dlEtapas">${etapas().map(e => `<option value="${esc(e)}">`).join("")}</datalist></div>
+    <div class="field"><label>Vem depois de (a casa só fica liberada quando esse estiver pronto)</label><select onchange="serv('${s.id}').apos=this.value;save();render()">
+      <option value="">Nenhum (começa livre)</option>${S.servicos.filter(x => x !== s).map(x => `<option value="${x.id}" ${x.id === s.apos ? "selected" : ""}>${esc(x.etapa ? x.etapa + " · " : "")}${esc(x.nome)}</option>`).join("")}</select></div>
+    <div class="row"><button class="btn sec" ${i ? "" : "disabled"} onclick="moverServ(-1)">Subir na lista</button><button class="btn sec" ${i < S.servicos.length - 1 ? "" : "disabled"} onclick="moverServ(1)">Descer</button></div></div>
+  <h2>Materiais por casa</h2><div class="card"><table><tr><th>Material</th><th>Tipo 1</th><th>Tipo 2</th><th></th></tr>
+    ${s.itens.map((it, k) => `<tr><td><a href="#" onclick="ir('material','${it.mat}');return false">${esc(nomeMat(it.mat))}</a><span class="sub">${esc(unMat(it.mat))}${(+mat(it.mat)?.fator || 1) !== 1 ? " · fator " + fN(mat(it.mat).fator) : ""}</span></td>
+      <td><input class="cnt" style="width:70px" type="number" step="any" min="0" value="${it.q1}" onchange="serv('${s.id}').itens[${k}].q1=+this.value||0;save()"></td>
+      <td><input class="cnt" style="width:70px" type="number" step="any" min="0" value="${it.q2}" onchange="serv('${s.id}').itens[${k}].q2=+this.value||0;save()"></td>
+      <td><button class="icobtn" aria-label="Tirar" onclick="serv('${s.id}').itens.splice(${k},1);save();render()">${xis}</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted">Nenhum material.</td></tr>`}</table>
+    <form style="margin-top:10px" onsubmit="event.preventDefault();addItemServ()"><input id="svMat" list="dlMat" placeholder="Adicionar material" autocomplete="off"><datalist id="dlMat">${optsMat()}</datalist>
+      <div class="row" style="margin-top:8px"><input id="svQ1" type="number" step="any" min="0" placeholder="Tipo 1"><input id="svQ2" type="number" step="any" min="0" placeholder="Tipo 2"><button class="btn sm n">+</button></div></form></div>
+  <h2>Andamento</h2><div class="card"><table><tr><th>Módulo</th><th>Prontas</th><th>Antes do controle</th></tr>
+    ${S.modulos.map(o => `<tr><td>${esc(o.nome)}<span class="sub">${totCasas(o)} casas</span></td>
+      <td><input class="cnt" style="width:70px" type="number" min="0" value="${feitas(o, s)}" onchange="modu('${o.id}').feitas['${s.id}']=Math.max(0,+this.value||0);save()"></td>
+      <td><input class="cnt" style="width:70px" type="number" min="0" value="${+o.base?.[s.id] || 0}" onchange="modu('${o.id}').base['${s.id}']=Math.max(0,+this.value||0);save()"></td></tr>`).join("")}</table>
+    <p class="muted" style="margin:8px 0 0">"Antes do controle" = casas que já estavam prontas quando o estoque começou a ser lançado. Elas não entram na comparação entre o previsto e o que saiu.</p></div>
+  <button class="btn dan" onclick="excluirServico()">Excluir serviço</button>`;
+}
+function addItemServ() {
+  const m = matPorRotulo(svMat.value); if (!m) return alert("Escolha um material da lista.");
+  const s = serv(sel), q1 = +svQ1.value || 0, q2 = svQ2.value === "" ? q1 : +svQ2.value || 0;
+  if (!q1 && !q2) return alert("Informe a quantidade por casa.");
+  const ja = s.itens.find(i => i.mat === m.id);
+  if (ja) Object.assign(ja, { q1, q2 }); else s.itens.push({ mat: m.id, q1, q2 });
+  save(); render(); document.getElementById("svMat").focus();
+}
+function moverServ(d) {
+  const i = S.servicos.findIndex(s => s.id === sel), j = i + d;
+  [S.servicos[i], S.servicos[j]] = [S.servicos[j], S.servicos[i]]; save(); render();
+}
+function excluirServico() {
+  if (!confirm("Excluir o serviço? Os serviços que vinham depois dele passam a vir depois do anterior a ele.")) return;
+  const s = serv(sel);
+  S.servicos.forEach(x => { if (x.apos === s.id) x.apos = s.apos; });
+  S.servicos = S.servicos.filter(x => x !== s); save(); voltar();
+}
+
 // ---------- materiais ----------
 function materiais() {
   titulo("Materiais", S.materiais.length + " cadastrados");
-  const grupos = [...new Set(S.materiais.map(m => m.grupo).filter(Boolean))].sort();
   return `<div class="seg noprint"><button aria-pressed="${aba.materiais === "lista"}" onclick="aba.materiais='lista';render()">Lista</button><button aria-pressed="${aba.materiais === "local"}" onclick="aba.materiais='local';render()">Onde está</button></div>
   <div class="row noprint" style="margin-bottom:10px"><input id="qBusca" placeholder="Buscar nome ou código" value="${esc(busca)}" oninput="busca=this.value;listaMat()">
-    <select class="n" style="width:40%" onchange="grupoSel=this.value;listaMat()"><option value="">Todos os grupos</option>${grupos.map(g => `<option ${g === grupoSel ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
-  ${aba.materiais === "local" ? `<button class="btn sec noprint" style="margin-bottom:10px" onclick="print()">Imprimir</button>` : `<button class="btn sec noprint" style="margin-bottom:10px" onclick="dlgMaterial()">+ Material avulso</button>`}
+    <select class="n" style="width:40%" onchange="etapaSel=this.value;listaMat()"><option value="">Todas as etapas</option>${etapas().map(g => `<option ${g === etapaSel ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
+  ${aba.materiais === "local" ? `<button class="btn sec noprint" style="margin-bottom:10px" onclick="print()">Imprimir</button>` : `<button class="btn sec noprint" style="margin-bottom:10px" onclick="dlgMaterial()">+ Material</button>`}
   <div id="lm"></div>`;
 }
 function listaMat(C = calc()) {
   const q = busca.trim().toUpperCase();
-  const ms = S.materiais.filter(m => (!grupoSel || m.grupo === grupoSel) && (!q || (m.nome + " " + m.cod).toUpperCase().includes(q))).sort(porNome);
-  const linha = m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc([m.cod, m.grupo].filter(Boolean).join(" · "))}${aba.materiais === "lista" ? " · " + esc(locaisDe(m)) : ""}</small></span>
-    <span class="q">${fN(C.saldo[m.id])} ${esc(m.un)}${C.comprar[m.id] ? `<small style="color:var(--wa-tx)">comprar ${fN(C.comprar[m.id])}</small>` : ""}</span></div>`;
+  const naEtapa = etapaSel && new Set(S.servicos.filter(s => (s.etapa || "Sem etapa") === etapaSel).flatMap(s => s.itens.map(i => i.mat)));
+  const ms = S.materiais.filter(m => (!naEtapa || naEtapa.has(m.id)) && (!q || (m.nome + " " + m.cod).toUpperCase().includes(q))).sort(porNome);
+  const linha = m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(m.cod)}${aba.materiais === "lista" ? " · " + esc(locaisDe(m)) : ""}</small></span>
+    <span class="q">${fN(C.saldo[m.id])} ${esc(m.un)}</span></div>`;
   if (aba.materiais === "lista") { lm.innerHTML = `<div class="card">${ms.map(linha).join("") || `<p class="empty">Nenhum material.</p>`}</div>`; return; }
   // onde está: só o que tem saldo, agrupado por local
   const comSaldo = ms.filter(m => (C.saldo[m.id] || 0) > 0);
@@ -336,30 +418,34 @@ function listaMat(C = calc()) {
 
 function material(C) {
   const m = mat(sel); if (!m) { voltar(); return ""; }
-  titulo(m.nome, [m.cod, m.grupo].filter(Boolean).join(" · "));
+  titulo(m.nome, m.cod);
+  const usos = S.servicos.flatMap(s => s.itens.filter(i => i.mat === m.id).map(i => [s, i]));
   const movs = S.movs.filter(x => x.mat === m.id).sort((a, b) => b.data.localeCompare(a.data));
-  const rotMov = x => ({ entrada: "Entrada" + (x.ped ? " · pedido " + esc(S.pedidos.find(p => p.id === x.ped)?.num || "") : ""), saida: "Saída · " + esc(S.modulos.find(o => o.id === x.mod)?.nome || ""), transf: "Transferência · " + esc(x.obra), ajuste: "Ajuste de conferência", anterior: "Já usado antes do app · " + esc(S.modulos.find(o => o.id === x.mod)?.nome || "") }[x.tipo]);
+  const rotMov = x => ({ entrada: "Entrada" + (x.ped ? " · pedido " + esc(S.pedidos.find(p => p.id === x.ped)?.num || "") : ""), saida: "Saída · " + esc(modu(x.mod)?.nome || "") + (x.serv ? " · " + esc(serv(x.serv)?.nome || "") : ""), transf: "Transferência · " + esc(x.obra), ajuste: "Ajuste de conferência" }[x.tipo]);
+  const cp = comprarAte(C, aba.hz)[m.id], f = prazoDe(m);
+  const demMod = o => C.dem.filter(d => d.mat === m.id && d.mod === o.id).reduce((t, d) => t + d.qtd, 0);
   return `<div class="card"><span class="muted">Em estoque</span><div class="big">${fN(C.saldo[m.id])} <span style="font-size:16px">${esc(m.un)}</span></div>
-    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${m.conf ? "conferido em " + fmt(m.conf) + " (há " + dias(m.conf, hoje()) + " dias)" : "nunca conferido"}</p></div>
+    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${m.conf ? "conferido em " + fmt(m.conf) + " (há " + dias(m.conf, hoje()) + " dias)" : "nunca conferido"}${f ? ` · ${esc(f.nome)}${f.prazo ? ", prazo " + f.prazo + " dias" : ""}` : ""}</p></div>
   <div class="kpis"><div><b>${fN(C.aChegar[m.id])}</b><span>a chegar (pedidos)</span></div><div><b>${fN(C.solAberta[m.id])}</b><span>solicitado sem pedido</span></div>
-    <div><b>${fN(C.falta[m.id])}</b><span>falta usar nos módulos</span></div><div><b style="color:${C.comprar[m.id] ? "var(--wa-tx)" : "inherit"}">${fN(C.comprar[m.id])}</b><span>precisa comprar</span></div></div>
+    <div><b>${fN(C.falta[m.id])}</b><span>falta usar na obra</span></div><div><b style="color:${cp ? "var(--wa-tx)" : "inherit"}">${fN(cp)}</b><span>comprar (${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())})</span></div></div>
   <div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida('${m.id}')">Saída</button><button class="btn sec" onclick="dlgMaterial('${m.id}')">Editar</button></div>
-  ${S.modulos.length ? `<h2>Previsão por módulo</h2><div class="card"><table><tr><th>Módulo</th><th>Previsto</th><th>Já saiu</th><th>Falta</th></tr>
-    ${S.modulos.map(o => { const p = previsto(m, o), s = C.saidoMod[o.id + "|" + m.id] || 0; return `<tr><td>${esc(o.nome)}</td><td>${fN(p)}</td><td>${fN(s)}</td><td>${fN(Math.max(0, p - s))}</td></tr>`; }).join("")}</table>
-    <p class="muted" style="margin:8px 0 0">Por casa: tipo 1 = ${fN(m.c1)} · tipo 2 = ${fN(m.c2)} ${esc(m.unQ || m.un)}${(+m.fator || 1) !== 1 ? " · fator " + fN(m.fator) : ""}</p></div>` : ""}
+  <h2>Usado em</h2><div class="card">${usos.map(([s, i]) => `<div class="it" onclick="ir('servico','${s.id}')"><span class="lb">${esc(s.nome)}<small>${esc(s.etapa)}</small></span><span class="q">${fN(i.q1)} / ${fN(i.q2)}<small>por casa tipo 1 / 2</small></span></div>`).join("") || `<p class="muted">Nenhum serviço usa esse material. Ligue ele a um serviço na aba Obra.</p>`}</div>
+  ${S.modulos.length && usos.length ? `<h2>Por módulo</h2><div class="card"><table><tr><th>Módulo</th><th>Falta usar</th><th>Previsto já usado</th><th>Saiu</th></tr>
+    ${S.modulos.map(o => `<tr><td>${esc(o.nome)}</td><td>${fN(demMod(o))}</td><td>${fN(C.esperado[o.id + "|" + m.id])}</td><td>${fN(C.saiu[o.id + "|" + m.id])}</td></tr>`).join("")}</table>
+    <p class="muted" style="margin:8px 0 0">"Previsto já usado" = casas prontas depois do início do controle × quantidade por casa. Se "Saiu" passa muito disso, tem desperdício ou saída lançada no módulo errado.</p></div>` : ""}
   <h2>Histórico</h2><div class="card">${movs.map(x => `<div class="it" style="cursor:default"><span class="lb">${rotMov(x)}<small>${fmt(x.data)}${x.obs ? " · " + esc(x.obs) : ""}</small></span>
-    <span class="q">${x.tipo === "entrada" || (x.tipo === "ajuste" && x.qtd > 0) ? "+" : x.tipo === "anterior" ? "" : "−"}${fN(Math.abs(x.qtd))}</span><button class="icobtn" aria-label="Apagar" onclick="apagarMov('${x.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("") || `<p class="muted">Sem movimentações.</p>`}</div>`;
+    <span class="q">${x.tipo === "entrada" || (x.tipo === "ajuste" && x.qtd > 0) ? "+" : "−"}${fN(Math.abs(x.qtd))}</span><button class="icobtn" aria-label="Apagar" onclick="apagarMov('${x.id}')">${xis}</button></div>`).join("") || `<p class="muted">Sem movimentações.</p>`}</div>`;
 }
 function apagarMov(id) { if (!confirm("Apagar este lançamento?")) return; S.movs = S.movs.filter(x => x.id !== id); save(); render(); }
 
 function dlgMaterial(id) {
-  const m = id ? mat(id) : { nome: "", cod: "", un: "", grupo: "", c1: 0, c2: 0, unQ: "", fator: 1, locais: [] };
-  D.innerHTML = `<form onsubmit="event.preventDefault();salvarMaterial('${id || ""}')"><h3>${id ? "Editar material" : "Material avulso"}</h3>
+  const m = id ? mat(id) : { nome: "", cod: "", un: "", fator: 1, forn: "", locais: [] };
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarMaterial('${id || ""}')"><h3>${id ? "Editar material" : "Novo material"}</h3>
     <div class="field"><label>Nome</label><input id="mNome" required value="${esc(m.nome)}"></div>
     <div class="row field"><div><label>Código Sienge</label><input id="mCod" value="${esc(m.cod)}"></div><div><label>Unidade do estoque</label><input id="mUn" value="${esc(m.un)}"></div></div>
-    <div class="field"><label>Grupo</label><input id="mGrupo" value="${esc(m.grupo)}"></div>
-    <div class="row field"><div><label>Por casa · tipo 1</label><input id="mC1" type="number" step="any" min="0" value="${m.c1 || 0}"></div><div><label>Por casa · tipo 2</label><input id="mC2" type="number" step="any" min="0" value="${m.c2 || 0}"></div></div>
-    <div class="row field"><div><label>Unidade da planilha</label><input id="mUnQ" value="${esc(m.unQ)}"></div><div><label>Fator (planilha → estoque)</label><input id="mFator" type="number" step="any" min="0" value="${m.fator || 1}"></div></div>
+    <div class="row field"><div><label>Fator (por casa → estoque)</label><input id="mFator" type="number" step="any" min="0" value="${m.fator || 1}"></div>
+      <div><label>Fornecedor</label><select id="mForn"><option value="">—</option>${S.fornecedores.slice().sort(porNome).map(f => `<option value="${f.id}" ${f.id === m.forn ? "selected" : ""}>${esc(f.nome)}</option>`).join("")}</select></div></div>
+    <p class="muted" style="margin-top:-6px">Fator: use quando a quantidade por casa está numa unidade e o estoque em outra (ex.: barras × kg por barra). Normalmente é 1.</p>
     <div class="field"><label>Onde está guardado</label>${S.locais.map(l => `<label class="row" style="color:var(--tx);font-size:15px;margin:6px 0"><input type="checkbox" class="n" name="mLoc" value="${l.id}" ${m.locais?.includes(l.id) ? "checked" : ""}><span>${esc(l.nome)}</span></label>`).join("") || `<p class="muted">Cadastre os locais em Ajustes.</p>`}</div>
     <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div>
     ${id ? `<button type="button" class="btn dan" style="margin-top:10px" onclick="excluirMaterial('${id}')">Excluir material</button>` : ""}</form>`;
@@ -367,14 +453,14 @@ function dlgMaterial(id) {
 }
 function salvarMaterial(id) {
   const m = id ? mat(id) : { id: uid(), apelidos: [] };
-  Object.assign(m, { nome: mNome.value.trim(), cod: mCod.value.trim(), un: mUn.value.trim(), grupo: mGrupo.value.trim(), c1: +mC1.value || 0, c2: +mC2.value || 0,
-    unQ: mUnQ.value.trim(), fator: +mFator.value || 1, locais: [...D.querySelectorAll("[name=mLoc]:checked")].map(i => i.value) });
+  Object.assign(m, { nome: mNome.value.trim(), cod: mCod.value.trim(), un: mUn.value.trim(), fator: +mFator.value || 1, forn: mForn.value,
+    locais: [...D.querySelectorAll("[name=mLoc]:checked")].map(i => i.value) });
   if (!id) S.materiais.push(m);
   save(); D.close(); id ? render() : ir("material", m.id);
 }
 function excluirMaterial(id) {
-  if (S.movs.some(x => x.mat === id) || S.pedidos.some(p => p.itens.some(i => i.mat === id)) || S.solics.some(s => s.itens.some(i => i.mat === id)))
-    return alert("Esse material tem lançamentos, pedidos ou solicitações. Não dá pra excluir.");
+  if (S.movs.some(x => x.mat === id) || S.pedidos.some(p => p.itens.some(i => i.mat === id)) || S.solics.some(s => s.itens.some(i => i.mat === id)) || S.servicos.some(s => s.itens.some(i => i.mat === id)))
+    return alert("Esse material tem lançamentos, pedidos, solicitações ou está num serviço. Não dá pra excluir.");
   if (!confirm("Excluir o material?")) return;
   S.materiais = S.materiais.filter(m => m.id !== id); save(); D.close(); voltar();
 }
@@ -383,46 +469,47 @@ function excluirMaterial(id) {
 const optsMat = () => S.materiais.slice().sort(porNome).map(m => `<option value="${esc(rotuloMat(m))}">`).join("");
 const matPorRotulo = t => S.materiais.find(m => rotuloMat(m) === t.trim()) || S.materiais.find(m => m.nome.toUpperCase() === t.trim().toUpperCase());
 function dlgSaida(id) {
-  const m = id && mat(id), C = calc();
+  const m = id && mat(id);
   D.innerHTML = `<form onsubmit="event.preventDefault();salvarSaida(event.submitter?.value)"><h3>Saída de material</h3>
     <div class="field"><label>Material</label><input id="sMat" list="dlMat" required autocomplete="off" value="${m ? esc(rotuloMat(m)) : ""}" oninput="saldoSaida()"><datalist id="dlMat">${optsMat()}</datalist><span class="sub" id="sSaldo"></span></div>
     <div class="row field"><div><label>Quantidade</label><input id="sQtd" type="number" step="any" min="0" required></div><div><label>Data</label><input id="sData" type="date" required value="${hoje()}"></div></div>
-    <div class="field"><label>Para onde</label><select id="sDest" onchange="sObraW.classList.toggle('hide',this.value!=='transf')">
-      ${S.modulos.map(o => `<option value="${o.id}">${esc(o.nome)}</option>`).join("")}<option value="transf">Transferência para outra obra</option>
-      ${S.modulos.map(o => `<option value="ant:${o.id}">${esc(o.nome)} · já usado antes do app (não mexe no estoque)</option>`).join("")}</select></div>
+    <div class="field"><label>Para onde</label><select id="sDest" onchange="sObraW.classList.toggle('hide',this.value!=='transf');sServW.classList.toggle('hide',this.value==='transf')">
+      ${S.modulos.map(o => `<option value="${o.id}">${esc(o.nome)}</option>`).join("")}<option value="transf">Transferência para outra obra</option></select></div>
+    <div class="field" id="sServW"><label>Serviço (opcional)</label><select id="sServ"></select></div>
     <div class="field hide" id="sObraW"><label>Obra de destino</label><input id="sObra" list="dlObras"><datalist id="dlObras">${[...new Set(S.movs.map(x => x.obra).filter(Boolean))].map(o => `<option value="${esc(o)}">`).join("")}</datalist></div>
     <div class="field"><label>Observação</label><input id="sObs"></div>
     <div class="row"><button type="button" class="btn sec" onclick="D.close()">Fechar</button><button class="btn sec" value="outra">Salvar e lançar outra</button><button class="btn" value="ok">Salvar</button></div></form>`;
   D.showModal(); saldoSaida();
-  if (!S.modulos.length) sObraW.classList.remove("hide");
+  if (!S.modulos.length) { sDest.value = "transf"; sDest.onchange(); }
   (m ? sQtd : sMat).focus();
 }
-function saldoSaida() { const m = matPorRotulo(sMat.value); sSaldo.textContent = m ? `Em estoque: ${fN(calc().saldo[m.id])} ${m.un}` : ""; }
+// o serviço: primeiro os que usam o material, depois o resto
+function saldoSaida() {
+  const m = matPorRotulo(sMat.value), C = calc();
+  sSaldo.textContent = m ? `Em estoque: ${fN(C.saldo[m.id])} ${m.un}` : "";
+  const usa = S.servicos.filter(s => m && s.itens.some(i => i.mat === m.id)), resto = S.servicos.filter(s => !usa.includes(s));
+  const o = s => `<option value="${s.id}">${esc(s.etapa ? s.etapa + " · " : "")}${esc(s.nome)}</option>`;
+  sServ.innerHTML = `<option value="">Não informar</option>${usa.length ? `<optgroup label="Usam esse material">${usa.map(o).join("")}</optgroup>` : ""}<optgroup label="Outros">${resto.map(o).join("")}</optgroup>`;
+  if (usa.length === 1) sServ.value = usa[0].id;
+}
 function salvarSaida(modo) {
   const m = matPorRotulo(sMat.value);
   if (!m) return alert("Escolha um material da lista.");
   const qtd = +sQtd.value; if (!(qtd > 0)) return alert("Informe a quantidade.");
-  const d = sDest.value, mv = { id: uid(), data: sData.value, mat: m.id, qtd, obs: sObs.value.trim() };
-  if (d === "transf") { if (!sObra.value.trim()) return alert("Informe a obra de destino."); Object.assign(mv, { tipo: "transf", obra: sObra.value.trim() }); }
-  else if (d.startsWith("ant:")) Object.assign(mv, { tipo: "anterior", mod: d.slice(4) });
-  else Object.assign(mv, { tipo: "saida", mod: d });
+  const mv = { id: uid(), data: sData.value, mat: m.id, qtd, obs: sObs.value.trim() };
+  if (sDest.value === "transf") { if (!sObra.value.trim()) return alert("Informe a obra de destino."); Object.assign(mv, { tipo: "transf", obra: sObra.value.trim() }); }
+  else Object.assign(mv, { tipo: "saida", mod: sDest.value, serv: sServ.value || undefined });
   S.movs.push(mv); save();
-  if (modo === "outra") { sMat.value = ""; sQtd.value = ""; sObs.value = ""; sSaldo.textContent = "Lançado. Próximo material:"; sMat.focus(); render(); }
+  if (modo === "outra") { sMat.value = ""; sQtd.value = ""; sObs.value = ""; saldoSaida(); sSaldo.textContent = "Lançado. Próximo material:"; sMat.focus(); render(); }
   else { D.close(); render(); }
 }
 
-// ---------- compras: precisa comprar, solicitações, pedidos ----------
+// ---------- compras: indicação, solicitações, pedidos ----------
 function compras(C) {
   titulo("Compras");
   const a = aba.compras;
   const seg = `<div class="seg"><button aria-pressed="${a === "comprar"}" onclick="aba.compras='comprar';render()">Comprar</button><button aria-pressed="${a === "solics"}" onclick="aba.compras='solics';render()">Solicitações</button><button aria-pressed="${a === "pedidos"}" onclick="aba.compras='pedidos';render()">Pedidos</button></div>`;
-  if (a === "comprar") {
-    const ls = Object.entries(C.comprar).map(([id, q]) => [mat(id), q]).sort((x, y) => porNome(x[0], y[0]));
-    return seg + `<p class="muted">Falta usar nos módulos − estoque − pedidos a chegar − solicitações sem pedido.</p>
-      ${ls.length ? `<div class="card">${ls.map(([m, q]) => `<label class="it"><input type="checkbox" class="n" name="cp" value="${m.id}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)}</small></span>
-        <input class="cnt" type="number" step="any" min="0" id="cq_${m.id}" value="${+q.toFixed(2)}"><span class="n muted" style="width:44px">${esc(m.un)}</span></label>`).join("")}</div>
-      <button class="btn" onclick="criarSolic()">Criar solicitação com os marcados</button>` : `<p class="empty">Nada a comprar.</p>`}`;
-  }
+  if (a === "comprar") return seg + indicacao(C);
   if (a === "solics") {
     const ss = S.solics.slice().sort((x, y) => y.data.localeCompare(x.data));
     return seg + `<button class="btn" style="margin-bottom:12px" onclick="criarSolic(true)">+ Nova solicitação</button>
@@ -434,8 +521,38 @@ function compras(C) {
   return seg + `<button class="btn" style="margin-bottom:12px" onclick="fPdf.click()">Importar pedido (PDF do Sienge)</button>
     <div class="card">${ps.map(p => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)} · ${fmt(p.data)}${p.etapa ? " · " + esc(p.etapa) : ""}</small></span><span class="q">${tagPedido(estadoPedido(p, C))}</span></div>`).join("") || `<p class="muted">Nenhum pedido.</p>`}</div>`;
 }
+// Indicação de compra: só o que não está coberto pelo que já tem/vem, dentro do horizonte,
+// agrupada por etapa e serviço. Um material usado em dois serviços aparece nos dois.
+function indicacao(C) {
+  const q = aba.fBusca.trim().toUpperCase();
+  const ds = C.dem.filter(d => d.falta > 1e-6 && d.nivel <= aba.hz && (!aba.fMod || d.mod === aba.fMod) && (!aba.fServ || d.sv === aba.fServ)
+    && (!aba.fEtapa || (serv(d.sv).etapa || "Sem etapa") === aba.fEtapa) && (!q || (nomeMat(d.mat) + " " + mat(d.mat)?.cod).toUpperCase().includes(q)));
+  const grupos = new Map(); // serviço -> material -> {falta, nivel}
+  for (const d of ds) {
+    const g = grupos.get(d.sv) || new Map(); grupos.set(d.sv, g);
+    const x = g.get(d.mat) || { falta: 0, nivel: d.nivel }; g.set(d.mat, x);
+    x.falta += d.falta; x.nivel = Math.min(x.nivel, d.nivel);
+  }
+  const svs = S.servicos.filter(s => grupos.has(s.id));
+  const filtros = `<div class="filtros">
+    <select onchange="aba.hz=+this.value;render()">${HORIZ.map(([v, t]) => `<option value="${v}" ${v === aba.hz ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <select onchange="aba.fMod=this.value;render()"><option value="">Todos os módulos</option>${S.modulos.map(o => `<option value="${o.id}" ${o.id === aba.fMod ? "selected" : ""}>${esc(o.nome)}</option>`).join("")}</select>
+    <select onchange="aba.fEtapa=this.value;aba.fServ='';render()"><option value="">Todas as etapas</option>${etapas().map(e => `<option ${e === aba.fEtapa ? "selected" : ""}>${esc(e)}</option>`).join("")}</select>
+    <select onchange="aba.fServ=this.value;render()"><option value="">Todos os serviços</option>${S.servicos.filter(s => !aba.fEtapa || (s.etapa || "Sem etapa") === aba.fEtapa).map(s => `<option value="${s.id}" ${s.id === aba.fServ ? "selected" : ""}>${esc(s.nome)}</option>`).join("")}</select>
+    <input style="grid-column:1/-1" placeholder="Buscar material" value="${esc(aba.fBusca)}" onchange="aba.fBusca=this.value;render()"></div>`;
+  return filtros + `<p class="muted">O que já tem em estoque, a chegar e solicitado é reservado primeiro pros serviços mais próximos. Aqui só aparece o que fica descoberto.</p>
+    ${svs.map(s => `<div class="card"><h4>${esc(s.nome)}</h4><span class="sub" style="margin-bottom:4px">${esc(s.etapa)}</span>${[...grupos.get(s.id)].sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0]))).map(([mid, x]) => { const m = mat(mid), f = prazoDe(m);
+      return `<label class="it"><input type="checkbox" class="n" name="cp" value="${s.id}|${mid}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)} · ${rotNivel(x.nivel)}${f?.prazo ? ` · prazo ${f.prazo} dias` : ""}</small></span>
+        <input class="cnt" type="number" step="any" min="0" id="cq_${s.id}_${mid}" value="${Math.ceil(x.falta * 100) / 100}"><span class="n muted" style="width:40px;font-size:12px">${esc(m.un)}</span></label>`; }).join("")}</div>`).join("") || `<p class="empty">Nada a comprar com esses filtros.</p>`}
+    ${svs.length ? `<button class="btn" onclick="criarSolic()">Criar solicitação com os marcados</button>` : ""}`;
+}
 function criarSolic(vazia) {
-  const itens = vazia ? [] : [...document.querySelectorAll("[name=cp]:checked")].map(i => ({ mat: i.value, qtd: +document.getElementById("cq_" + i.value).value || 0 })).filter(i => i.qtd > 0);
+  const itens = [];
+  if (!vazia) for (const i of document.querySelectorAll("[name=cp]:checked")) {
+    const [sv, mid] = i.value.split("|"), q = +document.getElementById(`cq_${sv}_${mid}`).value || 0;
+    if (!(q > 0)) continue;
+    const ja = itens.find(x => x.mat === mid); if (ja) ja.qtd += q; else itens.push({ mat: mid, qtd: q });
+  }
   if (!vazia && !itens.length) return alert("Marque pelo menos um material.");
   const num = prompt("Número da solicitação no Sienge (pode deixar em branco e preencher depois):");
   if (num === null) return;
@@ -448,14 +565,14 @@ function solic(C) {
   const peds = S.pedidos.filter(p => p.solic === s.id);
   return `<div class="card"><table><tr><th>Material</th><th>Pedido</th><th>Solicitado</th><th></th></tr>
     ${s.itens.map((i, k) => `<tr><td>${esc(nomeMat(i.mat))}<span class="sub">${esc(mat(i.mat)?.cod)}</span></td><td>${fN(C.pedidoSol[s.id + "|" + i.mat])}</td>
-      <td><input class="cnt" style="width:90px" type="number" step="any" min="0" value="${i.qtd}" onchange="S.solics.find(x=>x.id==='${s.id}').itens[${k}].qtd=+this.value||0;save();render()"> ${esc(unMat(i.mat))}</td>
-      <td><button class="icobtn" aria-label="Tirar" onclick="tirarItemSolic(${k})"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join("") || `<tr><td colspan="4" class="muted">Sem itens.</td></tr>`}</table>
+      <td><input class="cnt" style="width:80px" type="number" step="any" min="0" value="${i.qtd}" onchange="solAtual().itens[${k}].qtd=+this.value||0;save();render()"> ${esc(unMat(i.mat))}</td>
+      <td><button class="icobtn" aria-label="Tirar" onclick="solAtual().itens.splice(${k},1);save();render()">${xis}</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted">Sem itens.</td></tr>`}</table>
     <form class="row" style="margin-top:10px" onsubmit="event.preventDefault();addItemSolic()"><input id="aiMat" list="dlMat" placeholder="Adicionar material" autocomplete="off"><datalist id="dlMat">${optsMat()}</datalist>
-      <input id="aiQtd" class="n" style="width:90px" type="number" step="any" min="0" placeholder="Qtd"><button class="btn sm n">+</button></form></div>
+      <input id="aiQtd" class="n" style="width:80px" type="number" step="any" min="0" placeholder="Qtd"><button class="btn sm n">+</button></form></div>
   ${peds.length ? `<h2>Pedidos ligados</h2><div class="card">${peds.map(p => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span></div>`).join("")}</div>` : ""}
-  <div class="field"><label>Observação</label><input value="${esc(s.obs)}" onchange="S.solics.find(x=>x.id==='${s.id}').obs=this.value;save()"></div>
+  <div class="field"><label>Observação</label><input value="${esc(s.obs)}" onchange="solAtual().obs=this.value;save()"></div>
   <div class="row" style="margin-bottom:10px"><button class="btn sec" onclick="copiarSolic()">Copiar lista</button><button class="btn sec" onclick="numSolic()">Número Sienge</button></div>
-  <div class="row"><button class="btn sec" onclick="fecharSolic()">${s.fechada ? "Reabrir" : "Fechar solicitação"}</button><button class="btn dan" onclick="excluirSolic()">Excluir</button></div>`;
+  <div class="row"><button class="btn sec" onclick="solAtual().fechada=!solAtual().fechada;save();render()">${s.fechada ? "Reabrir" : "Fechar solicitação"}</button><button class="btn dan" onclick="excluirSolic()">Excluir</button></div>`;
 }
 const solAtual = () => S.solics.find(x => x.id === sel);
 function addItemSolic() {
@@ -463,9 +580,7 @@ function addItemSolic() {
   const q = +aiQtd.value; if (!(q > 0)) return alert("Informe a quantidade.");
   solAtual().itens.push({ mat: m.id, qtd: q }); save(); render(); document.getElementById("aiMat").focus();
 }
-function tirarItemSolic(k) { solAtual().itens.splice(k, 1); save(); render(); }
 function numSolic() { const n = prompt("Número da solicitação no Sienge:", solAtual().num); if (n !== null) { solAtual().num = n.trim(); save(); render(); } }
-function fecharSolic() { solAtual().fechada = !solAtual().fechada; save(); render(); }
 function excluirSolic() {
   if (!confirm("Excluir esta solicitação?")) return;
   S.pedidos.forEach(p => { if (p.solic === sel) p.solic = null; });
@@ -506,7 +621,7 @@ async function importarPdf(f) {
 function dlgPedido() {
   const p = novoPed;
   const sols = S.solics.filter(s => !s.fechada);
-  const obras = [...new Set(S.pedidos.map(x => x.obra).concat(p.obra).filter(Boolean))], etapas = [...new Set(S.pedidos.map(x => x.etapa).concat(p.etapa).filter(Boolean))];
+  const obras = [...new Set(S.pedidos.map(x => x.obra).concat(p.obra).filter(Boolean))], etps = [...new Set(S.pedidos.map(x => x.etapa).concat(p.etapa).filter(Boolean))];
   const opcoes = it => {
     const cand = S.materiais.filter(m => m.cod.split("-")[0] === it.cod).sort(porNome), resto = S.materiais.filter(m => !cand.includes(m)).sort(porNome);
     const o = m => `<option value="${m.id}" ${m.id === it.mat ? "selected" : ""}>${esc(rotuloMat(m))}</option>`;
@@ -516,7 +631,7 @@ function dlgPedido() {
   D.innerHTML = `<form onsubmit="event.preventDefault();salvarPedido()"><h3>Pedido ${esc(p.num)}</h3>
     <p class="muted" style="margin-top:-6px">${esc(p.fornecedor)} · ${fmt(p.data)}</p>
     <div class="row field"><div><label>Obra</label><input id="pObra" list="dlOb" value="${esc(p.obra)}"><datalist id="dlOb">${obras.map(o => `<option value="${esc(o)}">`).join("")}</datalist></div>
-      <div><label>Etapa</label><input id="pEtapa" list="dlEt" value="${esc(p.etapa)}"><datalist id="dlEt">${etapas.map(o => `<option value="${esc(o)}">`).join("")}</datalist></div></div>
+      <div><label>Etapa</label><input id="pEtapa" list="dlEt" value="${esc(p.etapa)}"><datalist id="dlEt">${etps.map(o => `<option value="${esc(o)}">`).join("")}</datalist></div></div>
     <div class="field"><label>Solicitação</label><select id="pSol"><option value="">Nenhuma</option>${sols.map(s => `<option value="${s.id}">${esc(s.num || "(sem número)")} · ${fmt(s.data)} · ${s.itens.length} itens</option>`).join("")}</select></div>
     <label>Itens (${p.itens.length}) — escolha o material do estoque de cada um</label>
     ${p.itens.map((it, k) => `<div class="map ${it.auto ? "" : "pend"}"><b style="font-size:14px">${esc(it.cod)} - ${esc(it.nome)} ${esc(it.comp)}</b>
@@ -528,14 +643,18 @@ function dlgPedido() {
 function salvarPedido() {
   const p = novoPed;
   if (p.itens.some(it => !it.mat)) return alert("Escolha o material de todos os itens (ou \"Material novo\").");
+  // fornecedor do pedido vira cadastro (pra guardar o prazo) e fica ligado aos materiais que ainda não têm
+  let forn = S.fornecedores.find(f => f.nome.toUpperCase() === p.fornecedor.toUpperCase());
+  if (!forn && p.fornecedor) S.fornecedores.push(forn = { id: uid(), nome: p.fornecedor, prazo: 0 });
   for (const it of p.itens) {
     if (it.mat === "novo") {
-      const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un, grupo: "", c1: 0, c2: 0, unQ: "", fator: 1, locais: [], apelidos: [] };
+      const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un, fator: 1, locais: [], apelidos: [] };
       S.materiais.push(m); it.mat = m.id;
     }
     const m = mat(it.mat);
     m.apelidos ??= []; if (!m.apelidos.includes(it.chave)) m.apelidos.push(it.chave);
     if (!m.un) m.un = it.un;
+    if (!m.forn && forn) m.forn = forn.id;
   }
   const ped = { id: uid(), num: p.num, data: p.data, fornecedor: p.fornecedor, obra: pObra.value.trim(), etapa: pEtapa.value.trim(), solic: pSol.value || null, fechado: false,
     itens: p.itens.map(it => ({ mat: it.mat, qtd: it.qtd, prev: it.prev, desc: `${it.cod} - ${it.nome} ${it.comp}`.trim() })) };
@@ -597,17 +716,19 @@ function salvarReceb() {
 // ---------- conferência ----------
 // Contagem por local; o estoque é um só, então o material só é ajustado quando
 // foi contado em todos os locais onde está. Contou 0 num local = saiu de lá.
+// A primeira conferência é o estoque inicial: o ajuste leva o saldo de 0 ao contado.
 let contagem = {}; // mat -> {local -> qtd}
 function conferir(C) {
   titulo("Conferência", "conte o que tem em cada local");
   const locs = [...S.locais.map(l => [l.id, l.nome]), ["_", "Sem local"]].filter(([id]) => !localConf || id === localConf);
   const lista = locs.map(([lid, nome]) => {
-    const ms = S.materiais.filter(m => lid === "_" ? !m.locais?.length && (C.saldo[m.id] || 0) > 0 : m.locais?.includes(lid)).sort(porNome);
+    const ms = S.materiais.filter(m => lid === "_" ? !m.locais?.length : m.locais?.includes(lid)).sort(porNome);
     return ms.length ? `<h2>${esc(nome)}</h2><div class="card">${ms.map(m => `<div class="it" style="cursor:default"><span class="lb">${esc(m.nome)}
       <small>no app: ${fN(C.saldo[m.id])} ${esc(m.un)}${m.locais?.length > 1 ? " (somando " + esc(locaisDe(m)) + ")" : ""} · ${m.conf ? "conferido há " + dias(m.conf, hoje()) + " dias" : "nunca conferido"}</small></span>
       <input class="cnt" type="number" step="any" min="0" placeholder="contado" value="${contagem[m.id]?.[lid] ?? ""}" oninput="(contagem['${m.id}']??={})['${lid}']=this.value"></div>`).join("")}</div>` : "";
   }).join("");
   return `<div class="field"><select onchange="localConf=this.value;render()"><option value="">Todos os locais</option>${S.locais.map(l => `<option value="${l.id}" ${l.id === localConf ? "selected" : ""}>${esc(l.nome)}</option>`).join("")}<option value="_" ${localConf === "_" ? "selected" : ""}>Sem local</option></select></div>
+    <p class="muted" style="margin-top:0">Material sem local aparece em "Sem local". Pra cadastrar o estoque atual, conte aqui e depois marque onde cada um está guardado.</p>
     ${lista || `<p class="empty">Nenhum material aqui.</p>`}
     ${lista ? `<button class="btn" onclick="salvarConferencia()">Salvar conferência</button>` : ""}`;
 }
@@ -633,19 +754,21 @@ function salvarConferencia() {
 // ---------- ajustes ----------
 function ajustes() {
   titulo("Ajustes");
-  return `<h2>Módulos</h2><div class="card"><p class="muted" style="margin-top:0">Quantas casas de cada tipo tem em cada módulo. A previsão de material sai daqui.</p>
-    ${S.modulos.map(o => `<div class="row" style="margin-bottom:8px"><input value="${esc(o.nome)}" onchange="modu('${o.id}').nome=this.value.trim();save()">
-      <input class="n" style="width:70px" type="number" min="0" title="Casas tipo 1" value="${o.t1}" onchange="modu('${o.id}').t1=+this.value||0;save()">
-      <input class="n" style="width:70px" type="number" min="0" title="Casas tipo 2" value="${o.t2}" onchange="modu('${o.id}').t2=+this.value||0;save()">
-      <button class="icobtn n" aria-label="Remover" onclick="tirarModulo('${o.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("")}
-    ${S.modulos.length ? `<p class="muted">colunas: nome · casas tipo 1 · casas tipo 2</p>` : ""}
+  const linhaX = (val, onch, rm, extra = "") => `<div class="row" style="margin-bottom:8px"><input value="${esc(val)}" onchange="${onch}">${extra}<button class="icobtn n" aria-label="Remover" onclick="${rm}">${xis}</button></div>`;
+  return `<h2>Módulos</h2><div class="card"><p class="muted" style="margin-top:0">Nome · casas tipo 1 · casas tipo 2.</p>
+    ${S.modulos.map(o => linhaX(o.nome, `modu('${o.id}').nome=this.value.trim();save()`, `tirarModulo('${o.id}')`,
+      `<input class="n" style="width:64px" type="number" min="0" title="Casas tipo 1" value="${o.t1}" onchange="modu('${o.id}').t1=+this.value||0;save()">
+       <input class="n" style="width:64px" type="number" min="0" title="Casas tipo 2" value="${o.t2}" onchange="modu('${o.id}').t2=+this.value||0;save()">`)).join("")}
     <button class="btn sec" onclick="addModulo()">+ Módulo</button></div>
+  <div class="card"><h4>Início do controle de estoque</h4><p class="muted" style="margin-top:0">Depois de lançar o andamento atual na aba Obra, toque aqui: as casas prontas até hoje ficam marcadas como "antes do controle" e não entram na comparação entre o previsto e o que saiu.</p>
+    <button class="btn sec" onclick="pontoPartida()">Marcar andamento atual como ponto de partida</button></div>
+  <h2>Fornecedores</h2><div class="card"><p class="muted" style="margin-top:0">Nome · prazo de entrega em dias. Quem vem num pedido importado entra aqui sozinho.</p>
+    ${S.fornecedores.slice().sort(porNome).map(f => linhaX(f.nome, `S.fornecedores.find(x=>x.id==='${f.id}').nome=this.value.trim();save()`, `tirarForn('${f.id}')`,
+      `<input class="n" style="width:70px" type="number" min="0" title="Prazo em dias" value="${f.prazo || ""}" placeholder="dias" onchange="S.fornecedores.find(x=>x.id==='${f.id}').prazo=+this.value||0;save()">`)).join("")}
+    <button class="btn sec" onclick="addForn()">+ Fornecedor</button></div>
   <h2>Locais de armazenamento</h2><div class="card">
-    ${S.locais.map(l => `<div class="row" style="margin-bottom:8px"><input value="${esc(l.nome)}" onchange="S.locais.find(x=>x.id==='${l.id}').nome=this.value.trim();save()">
-      <button class="icobtn n" aria-label="Remover" onclick="tirarLocal('${l.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("")}
+    ${S.locais.map(l => linhaX(l.nome, `S.locais.find(x=>x.id==='${l.id}').nome=this.value.trim();save()`, `tirarLocal('${l.id}')`)).join("")}
     <button class="btn sec" onclick="addLocal()">+ Local</button></div>
-  <h2>Planilha de quantitativos</h2><div class="card"><p class="muted" style="margin-top:0">Lê o consumo por casa (modelo 1 e 2) de cada material. Pode importar de novo quando a planilha mudar: os valores são substituídos.</p>
-    <button class="btn sec" onclick="fXls.click()">Importar planilha (.xlsx)</button></div>
   <h2>Google Drive</h2><div class="card">
     <div class="field"><label>Client ID (do Google Cloud)</label><input id="aCid" value="${esc(S.config.driveClientId)}" placeholder="123456-abc.apps.googleusercontent.com" style="font-size:12px" onchange="S.config.driveClientId=this.value.trim();save()"></div>
     <p class="muted">Pode usar o mesmo Client ID do app de Assistência. Os dados ficam no arquivo <code>estoque.json</code>, na pasta "Controle de Estoque" do seu Drive.</p>
@@ -654,52 +777,24 @@ function ajustes() {
   <h2>Backup</h2><div class="card"><p class="muted" style="margin-top:0">${S.meta.backup ? "Último backup: " + fmt(S.meta.backup) : "Nunca fez backup."}</p>
     <div class="row"><button class="btn" onclick="exportar()">Exportar</button><button class="btn sec" onclick="fBk.click()">Importar</button></div></div>`;
 }
-const modu = id => S.modulos.find(o => o.id === id);
-function addModulo() { const n = prompt("Nome do módulo (ex: MÓDULO 1):"); if (n?.trim()) { S.modulos.push({ id: uid(), nome: n.trim(), t1: 0, t2: 0 }); save(); render(); } }
+function addModulo() { const n = prompt("Nome do módulo (ex: MÓDULO 1):"); if (n?.trim()) { S.modulos.push({ id: uid(), nome: n.trim(), t1: 0, t2: 0, feitas: {}, base: {} }); save(); render(); } }
 function tirarModulo(id) {
   if (S.movs.some(x => x.mod === id)) return alert("Esse módulo tem saídas lançadas. Não dá pra remover.");
   if (confirm("Remover o módulo?")) { S.modulos = S.modulos.filter(o => o.id !== id); save(); render(); }
+}
+function pontoPartida() {
+  if (!confirm("Marcar as casas prontas de hoje como \"antes do controle\" em todos os módulos e serviços?")) return;
+  S.modulos.forEach(o => o.base = { ...o.feitas }); save(); alert("Pronto.");
+}
+function addForn() { const n = prompt("Nome do fornecedor:"); if (n?.trim()) { S.fornecedores.push({ id: uid(), nome: n.trim(), prazo: 0 }); save(); render(); } }
+function tirarForn(id) {
+  if (!confirm("Remover o fornecedor?")) return;
+  S.fornecedores = S.fornecedores.filter(f => f.id !== id); S.materiais.forEach(m => { if (m.forn === id) m.forn = ""; }); save(); render();
 }
 function addLocal() { const n = prompt("Nome do local (ex: Container 1):"); if (n?.trim()) { S.locais.push({ id: uid(), nome: n.trim() }); save(); render(); } }
 function tirarLocal(id) {
   if (!confirm("Remover o local? Os materiais deixam de apontar pra ele.")) return;
   S.locais = S.locais.filter(l => l.id !== id); S.materiais.forEach(m => m.locais = (m.locais || []).filter(l => l !== id)); save(); render();
-}
-
-// ---------- importar quantitativos ----------
-let quant = null;
-async function importarQuant(f) {
-  if (!f) return;
-  try {
-    if (!window.XLSX) await new Promise((ok, erro) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = ok; s.onerror = () => erro(new Error("sem internet?")); document.head.append(s); });
-    const wb = XLSX.read(await f.arrayBuffer());
-    quant = lerQuantitativo(wb.SheetNames.map(n => ({ nome: n, linhas: XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: false }) })));
-  } catch (e) { return alert("Não consegui ler a planilha: " + e.message); }
-  if (!quant.length) return alert("Não encontrei o bloco \"Quantidade de insumos em projeto\" em nenhuma aba.");
-  const abas = Object.entries(Object.groupBy(quant, l => l.aba));
-  D.innerHTML = `<form onsubmit="event.preventDefault();aplicarQuant()"><h3>Planilha de quantitativos</h3>
-    <p class="muted" style="margin-top:-6px">Marque as abas que entram. Se o mesmo material aparece em mais de uma aba marcada, as quantidades por casa se somam.</p>
-    ${abas.map(([a, ls]) => `<label class="it"><input type="checkbox" class="n" name="qa" value="${esc(a)}" checked><span class="lb">${esc(a)}<small>${ls.length} linhas</small></span></label>`).join("")}
-    <div class="row" style="margin-top:12px"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Importar</button></div></form>`;
-  D.showModal();
-}
-function aplicarQuant() {
-  const abas = new Set([...D.querySelectorAll("[name=qa]:checked")].map(i => i.value));
-  const tot = new Map(); // chave (código ou nome) -> {linha, c1, c2}
-  for (const l of quant.filter(l => abas.has(l.aba))) {
-    const k = l.cod || l.nome.toUpperCase();
-    const t = tot.get(k) || { l, c1: 0, c2: 0 }; tot.set(k, t);
-    if (l.modelo === 0 || l.modelo === 1) t.c1 += l.qtd;
-    if (l.modelo === 0 || l.modelo === 2) t.c2 += l.qtd; // ponytail: modelo 3 (só no esgoto) fica de fora até ter casa tipo 3
-  }
-  let novos = 0, atual = 0;
-  for (const [k, { l, c1, c2 }] of tot) {
-    let m = S.materiais.find(m => l.cod ? m.cod === l.cod : !m.cod && m.nome.toUpperCase() === k);
-    if (!m) { m = { id: uid(), nome: l.nome, cod: l.cod, un: l.un, grupo: l.aba, fator: 1, locais: [], apelidos: [] }; S.materiais.push(m); novos++; } else atual++;
-    Object.assign(m, { c1: +c1.toFixed(4), c2: +c2.toFixed(4), unQ: l.un }); m.grupo ||= l.aba;
-  }
-  save(); D.close(); render();
-  alert(`${novos} materiais novos, ${atual} atualizados.`);
 }
 
 // ---------- backup ----------
@@ -800,17 +895,21 @@ btnDrive.onclick = () => { if (!S.config.driveClientId) { ir("ajustes"); return 
 // ---------- teste das contas: abrir index.html?teste=1 ----------
 if (location.search.includes("teste")) {
   S = vazio();
-  S.modulos = [{ id: "M1", nome: "M1", t1: 2, t2: 1 }];
-  S.materiais = [{ id: "a", nome: "A", cod: "1-1", un: "un", c1: 10, c2: 20, fator: 1, locais: [] }];
-  S.movs = [{ id: "1", tipo: "entrada", mat: "a", qtd: 15, ped: "P" }, { id: "2", tipo: "saida", mat: "a", qtd: 5, mod: "M1" }, { id: "3", tipo: "anterior", mat: "a", qtd: 5, mod: "M1" }, { id: "4", tipo: "ajuste", mat: "a", qtd: -1 }];
+  // 2 casas tipo 1; serviço B vem depois de A; A pronto em 1 casa, B em nenhuma
+  S.modulos = [{ id: "M1", nome: "M1", t1: 2, t2: 0, feitas: { A: 1 }, base: {} }];
+  S.materiais = [{ id: "a", nome: "A", cod: "1-1", un: "un", fator: 1, locais: [] }];
+  S.servicos = [{ id: "A", nome: "A", apos: "", itens: [{ mat: "a", q1: 10, q2: 0 }] }, { id: "B", nome: "B", apos: "A", itens: [{ mat: "a", q1: 5, q2: 0 }] }];
+  S.movs = [{ id: "1", tipo: "entrada", mat: "a", qtd: 12, ped: "P" }, { id: "2", tipo: "saida", mat: "a", qtd: 3, mod: "M1" }];
   S.pedidos = [{ id: "P", solic: "S", itens: [{ mat: "a", qtd: 20 }] }];
-  S.solics = [{ id: "S", itens: [{ mat: "a", qtd: 25 }] }];
+  S.solics = [{ id: "S", itens: [{ mat: "a", qtd: 21 }] }];
   const C = calc(), ok = (c, m) => { if (!c) throw new Error(m); };
   try {
-    ok(C.saldo.a === 9, "saldo: 15 − 5 − 1 (anterior não mexe)");
-    ok(C.falta.a === 30, "falta: 2×10 + 1×20 − 10 já saído");
-    ok(C.aChegar.a === 5 && C.solAberta.a === 5, "a chegar 20−15, solicitado sem pedido 25−20");
-    ok(C.comprar.a === 11, "comprar: 30 − 9 − 5 − 5");
+    ok(C.saldo.a === 9 && C.aChegar.a === 8 && C.solAberta.a === 1, "saldo 12−3, a chegar 20−12, solicitado 21−20");
+    ok(niveis(S.modulos[0], S.servicos[1]).join() === "1,1", "B: 1 casa liberada (A pronto), 1 esperando A");
+    ok(C.falta.a === 20, "falta usar: A 1×10 + B 2×5");
+    // tem 18 (9+8+1): A frente 10, B frente 5, sobra 3 pro B daqui a 1 serviço (precisa 5)
+    ok(!comprarAte(C, 0).a && comprarAte(C, 1).a === 2, "reserva pela ordem: frente coberta, falta 2 no próximo");
+    ok(C.esperado["M1|a"] === 10, "previsto já usado: 1 casa de A × 10");
     const { st } = estadoPedido(S.pedidos[0], C); ok(st === "parcial", "pedido parcial");
     document.body.innerHTML = "<h1 style='padding:20px'>Testes OK</h1>";
   } catch (e) { document.body.innerHTML = "<h1 style='padding:20px;color:red'>FALHOU: " + e.message + "</h1>"; }
