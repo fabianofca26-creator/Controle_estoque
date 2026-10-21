@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3a2a12">
+<title>Estoque da Obra</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --line:#e3e5ea; --line2:#cfd3db;
+  --tx:#161a20; --tx2:#5d646f; --tx3:#8b929d;
+  --ac:#3a2a12; --ac-tx:#fff;
+  --ok-bg:#e7f4ea; --ok-tx:#1d5b30;
+  --wa-bg:#fdf0d9; --wa-tx:#7a5106;
+  --er-bg:#fbe9e9; --er-tx:#8f2020;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#101317; --card:#181c22; --line:#272c34; --line2:#39404a;
+    --tx:#eceef2; --tx2:#a3abb7; --tx3:#767e8a;
+    --ac:#ecdcc0; --ac-tx:#1d1508;
+    --ok-bg:#16301f; --ok-tx:#8fd6a4;
+    --wa-bg:#33270f; --wa-tx:#f0c476;
+    --er-bg:#331818; --er-tx:#f0a0a0;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:90px}
+h1,h2,h3{font-weight:600;margin:0}
+button{font:inherit;color:inherit}
+.wrap{max-width:620px;margin:0 auto;padding:0 14px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 0 10px;display:flex;align-items:center;gap:10px}
+header .t{flex:1;min-width:0}
+header h1{font-size:17px;line-height:1.2}
+header p{margin:0;font-size:12px;color:var(--tx3)}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icobtn{background:none;border:0;padding:7px;border-radius:9px;color:var(--tx2);cursor:pointer;display:flex}
+.icobtn:active{background:var(--line)}
+.icobtn.sync{color:var(--ok-tx)} .icobtn.err{color:var(--er-tx)} .icobtn.busy{opacity:.5} .icobtn.off{color:var(--tx3)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--tx2);margin:0 0 5px}
+input,select,textarea{width:100%;font:inherit;background:var(--card);color:var(--tx);border:1px solid var(--line2);border-radius:10px;padding:11px 12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+input[type=checkbox]{width:22px;height:22px;flex:none;margin:0}
+.field{margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.row>.n{flex:none}
+.btn{width:100%;background:var(--ac);color:var(--ac-tx);border:0;border-radius:10px;padding:13px;font-size:16px;font-weight:600;cursor:pointer}
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.4}
+.btn.sec{background:transparent;color:var(--tx);border:1px solid var(--line2);font-weight:400;padding:11px}
+.btn.sm{width:auto;padding:9px 13px;font-size:14px}
+.btn.dan{background:transparent;color:var(--er-tx);border:1px solid var(--er-tx);font-weight:400;padding:11px}
+.seg{display:flex;gap:6px;margin:0 0 12px}
+.seg button{flex:1;background:transparent;border:1px solid var(--line2);border-radius:10px;padding:9px 4px;font-size:14px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--ac);color:var(--ac-tx);border-color:var(--ac);font-weight:600}
+.it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.it:last-child{border-bottom:0}
+.it .lb{flex:1;min-width:0}
+.it .lb small,.sub{display:block;font-size:12px;color:var(--tx3)}
+.it .q{text-align:right;font-weight:600;white-space:nowrap}
+.it .q small{display:block;font-weight:400;font-size:12px;color:var(--tx3)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--line);color:var(--tx2);margin:2px 3px 0 0;font-weight:500}
+.tag.ok{background:var(--ok-bg);color:var(--ok-tx)} .tag.wa{background:var(--wa-bg);color:var(--wa-tx)} .tag.er{background:var(--er-bg);color:var(--er-tx)}
+.big{font-size:30px;font-weight:700;line-height:1.1}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.kpis div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpis b{display:block;font-size:18px}
+.kpis span{font-size:12px;color:var(--tx3)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--tx3);font-weight:500}
+.muted{color:var(--tx3);font-size:13px}
+.empty{text-align:center;color:var(--tx3);padding:30px 0}
+.hide{display:none!important}
+h2{font-size:15px;margin:18px 0 8px;color:var(--tx2)}
+h3{margin-bottom:12px}
+dialog{border:0;border-radius:var(--r);padding:18px;width:min(94vw,560px);max-height:92vh;background:var(--card);color:var(--tx)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--tx3);cursor:pointer}
+nav button[aria-current=true]{color:var(--ac);font-weight:600}
+.cnt{width:90px;flex:none;text-align:right;padding:8px}
+a{color:var(--tx);text-decoration-color:var(--tx3)}
+.map{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.map.pend{border-color:var(--wa-tx)}
+@media print{
+  header,nav,.noprint{display:none!important}
+  body{padding:0;background:#fff;color:#000}
+  .card{border:0;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="icobtn hide" id="btVoltar" aria-label="Voltar" onclick="voltar()"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="t"><h1 id="titulo">Estoque da Obra</h1><p id="subtit"></p></div>
+    <button class="icobtn off" id="btnDrive" aria-label="Google Drive"><svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .4-9A7 7 0 0 0 4.3 12.5 3.5 3.5 0 0 0 6 19z"/></svg></button>
+  </header>
+  <main id="app"></main>
+</div>
+
+<nav id="nav">
+  <button data-t="painel" onclick="ir('painel')"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Painel</button>
+  <button data-t="materiais" onclick="ir('materiais')"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Materiais</button>
+  <button data-t="compras" onclick="ir('compras')"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>Compras</button>
+  <button data-t="conferir" onclick="ir('conferir')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Conferir</button>
+  <button data-t="ajustes" onclick="ir('ajustes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
+</nav>
+
+<dialog id="D"></dialog>
+<input type="file" id="fPdf" accept="application/pdf" class="hide" onchange="importarPdf(this.files[0]); this.value=''">
+<input type="file" id="fXls" accept=".xlsx,.xls" class="hide" onchange="importarQuant(this.files[0]); this.value=''">
+<input type="file" id="fBk" accept=".json" class="hide" onchange="importarBackup(this.files[0]); this.value=''">
+
+<script>
+// ---------- leitura do pedido (PDF do Sienge) e da planilha de quantitativos ----------
+// Funções puras: o parser.test.mjs roda elas no Node com os arquivos reais.
+// <parser>
+// O Sienge gera dois modelos: "Emissão de Pedido de Compra" (cada item numa linha)
+// e "Ordem de Compra" (item "COD - NOME" com o complemento nas linhas de baixo e a
+// data de entrega meia linha abaixo). Os dois têm o cabeçalho "Insumo ... Quant".
+const numBR = s => +String(s).replace(/\./g, "").replace(",", ".");
+const dataISO = s => s.split("/").reverse().join("-");
+const semCodigo = s => s.replace(/^\d+\s*-\s*/, "").trim();
+function linhasPdf(itens) {
+  const ls = [];
+  for (const it of itens.filter(i => i.s.trim()).sort((a, b) => b.y - a.y || a.x - b.x)) {
+    let l = ls.find(l => Math.abs(l.y - it.y) <= 1.5);
+    if (!l) ls.push(l = { y: it.y, t: [] });
+    l.t.push({ x: it.x, s: it.s.trim() });
+  }
+  ls.forEach(l => l.t.sort((a, b) => a.x - b.x));
+  return ls.sort((a, b) => b.y - a.y);
+}
+function lerPedido(paginas) {
+  const p = { num: "", data: "", fornecedor: "", obra: "", unidade: "", itens: [] };
+  const DATA = /^\d{2}\/\d{2}\/\d{4}$/;
+  let item = null;
+  paginas.forEach((pag, n) => {
+    const ls = linhasPdf(pag);
+    let naTabela = false, depoisFornecedor = false, depoisUnidade = false;
+    for (const l of ls) {
+      const ss = l.t.map(t => t.s), apos = rot => { const i = ss.indexOf(rot); return i >= 0 && i + 1 < ss.length ? ss[i + 1] : null; };
+      if (ss.some(s => s.includes("SIENGE"))) continue; // rodapé: tem data e hora de emissão
+      if (n === 0) {
+        if (!p.num && (apos("Pedido:") || apos("Pedido"))) { p.num = apos("Pedido:") || apos("Pedido"); p.data = dataISO(ss.find(s => DATA.test(s)) || ""); }
+        if (/^(Dados do fornecedor|Fornecedor)/.test(ss[0])) depoisFornecedor = true;
+        else if (depoisFornecedor && (apos("Razão social:") || apos("Nome"))) { p.fornecedor = semCodigo(apos("Razão social:") || apos("Nome")); depoisFornecedor = false; }
+        if (!p.obra && (apos("Obra:") || apos("Obra"))) p.obra = semCodigo(apos("Obra:") || apos("Obra"));
+        if (depoisUnidade) { p.unidade = semCodigo(ss[0]); depoisUnidade = false; }
+        if (ss[0] === "Unidade construtiva") depoisUnidade = true;
+      }
+      if (ss[0].startsWith("Insumo") && ss.some(s => s.startsWith("Quant"))) { naTabela = true; continue; }
+      if (!naTabela) continue;
+      if (/^(Cond|Total)/.test(ss[0])) { naTabela = false; continue; }
+      const cab = l.t[0].s.match(/^(\d+)\s*-\s*(.+)$/);
+      const iq = ss.findIndex((s, i) => i > 0 && /^[\d.]+,\d+(\s+\S+)?$/.test(s));
+      if (cab && iq > 0) {
+        const [q, un] = ss[iq].split(/\s+/);
+        item = { cod: cab[1], nome: cab[2].trim(), comp: "", qtd: numBR(q), un: un || ss[iq + 1] || "", prev: "" };
+        p.itens.push(item);
+      } else if (item && l.t.every(t => t.x < 250) && !ss.some(s => DATA.test(s))) {
+        item.comp = (item.comp + " " + ss.join(" ")).trim();
+        continue;
+      }
+      const d = ss.find(s => DATA.test(s));
+      if (item && d && !item.prev) item.prev = dataISO(d);
+    }
+  });
+  return p;
+}
+// Planilha de quantitativos: cada aba tem à direita um bloco por modelo de casa
+// (MODELO, FASE, Insumo, Unidade, "Quantidade de insumos em projeto" = por casa,
+// CÓDIGO SIENGE). As colunas mudam de lugar entre abas, então acha pelo cabeçalho.
+function lerQuantitativo(abas) {
+  const out = [];
+  const n = v => String(v ?? "").replace(/\s+/g, " ").trim().toUpperCase();
+  for (const { nome: aba, linhas } of abas) {
+    const h = (linhas[0] || []).map(n);
+    const cM = h.indexOf("MODELO");
+    const ini = cM >= 0 ? cM : h.indexOf("ITEM", 1); // sem MODELO: o bloco começa no segundo "Item"
+    if (ini < 0) continue;
+    const col = re => h.findIndex((c, j) => j >= ini && re.test(c));
+    const cF = col(/^FASE$/), cI = col(/^INSUMO/), cU = col(/^UNIDADE/), cQ = col(/^QUANTIDADE DE INSUMOS/), cC = col(/^C[OÓ]DIGO/);
+    if (cI < 0 || cQ < 0) continue;
+    // aba sem nenhuma linha do modelo 2 = o material é igual nos dois tipos (modelo 0)
+    const temM2 = cM >= 0 && linhas.some((l, i) => i && +l[cM] === 2);
+    for (const l of linhas.slice(1)) {
+      const qtd = +l[cQ], nome = String(l[cI] ?? "").replace(/\s+/g, " ").trim();
+      // só linhas com MODELO (ou Item) preenchido: abaixo da tabela tem rascunhos de conta
+      if (!(+l[ini] > 0) || !nome || !(qtd > 0)) continue;
+      out.push({ aba, modelo: temM2 ? +l[cM] || 1 : 0, fase: cF >= 0 ? String(l[cF] ?? "").trim() : "", nome,
+        un: cU >= 0 ? String(l[cU] ?? "").trim() : "", cod: cC >= 0 ? String(l[cC] ?? "").replace(/\s+/g, "") : "", qtd });
+    }
+  }
+  return out;
+}
+// </parser>
+
+// ---------- dados ----------
+// material: {id, nome, cod ("797-2"), un, grupo, c1, c2 (consumo por casa tipo 1/2, na unidade da planilha),
+//            unQ (unidade da planilha), fator (planilha × fator = unidade do estoque), locais:[id], conf (data), apelidos:[chave do pedido]}
+// mov: {id, data, tipo: entrada|saida|transf|ajuste|anterior, mat, qtd, mod?, obra?, ped?, obs?}
+//   ajuste guarda a diferença com sinal; "anterior" = já usado no módulo antes do app (não mexe no estoque)
+// solic: {id, num, data, obs, fechada, itens:[{mat, qtd}]}
+// pedido: {id, num, data, fornecedor, obra, etapa, solic, fechado, itens:[{mat, qtd, prev, desc}]}
+const KEY = "estoque-obra";
+const vazio = () => ({ materiais: [], locais: [], modulos: [], movs: [], solics: [], pedidos: [], config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
+function migrar(d) { const v = vazio(); for (const k in v) d[k] ??= v[k]; return d; }
+let S = migrar(JSON.parse(localStorage.getItem(KEY) || "null") || vazio());
+function save() { S.meta.salvoEm = new Date().toISOString(); localStorage.setItem(KEY, JSON.stringify(S)); agendarSync(); }
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const hoje = () => new Date().toLocaleDateString("sv");
+const fmt = d => d ? d.split("-").reverse().join("/") : "";
+const dias = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+const fN = v => (+v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const mat = id => S.materiais.find(m => m.id === id);
+const nomeMat = id => mat(id)?.nome || "(material removido)";
+const unMat = id => mat(id)?.un || "";
+const chaveItem = it => it.cod + "|" + (it.nome + " " + it.comp).replace(/\s+/g, " ").trim().toUpperCase();
+const rotuloMat = m => (m.cod ? m.cod + " · " : "") + m.nome;
+const porNome = (a, b) => a.nome.localeCompare(b.nome);
+const previsto = (m, mod) => ((+mod.t1 || 0) * (+m.c1 || 0) + (+mod.t2 || 0) * (+m.c2 || 0)) * (+m.fator || 1);
+
+// ---------- contas ----------
+// comprar = falta usar nos módulos − estoque − pedido a chegar − solicitação ainda sem pedido
+function calc() {
+  const soma = (o, k, v) => o[k] = (o[k] || 0) + v;
+  const saldo = {}, saidoMod = {}, receb = {}, pedidoSol = {}, aChegar = {}, solAberta = {}, falta = {}, comprar = {};
+  for (const m of S.movs) {
+    if (m.tipo !== "anterior") soma(saldo, m.mat, m.tipo === "entrada" || m.tipo === "ajuste" ? m.qtd : -m.qtd);
+    if ((m.tipo === "saida" || m.tipo === "anterior") && m.mod) soma(saidoMod, m.mod + "|" + m.mat, m.qtd);
+    if (m.tipo === "entrada" && m.ped) soma(receb, m.ped + "|" + m.mat, m.qtd);
+  }
+  for (const p of S.pedidos) for (const it of p.itens) {
+    if (p.solic) soma(pedidoSol, p.solic + "|" + it.mat, it.qtd);
+    const f = it.qtd - (receb[p.id + "|" + it.mat] || 0);
+    if (!p.fechado && f > 0) soma(aChegar, it.mat, f);
+  }
+  for (const s of S.solics) if (!s.fechada) for (const it of s.itens) {
+    const f = it.qtd - (pedidoSol[s.id + "|" + it.mat] || 0);
+    if (f > 0) soma(solAberta, it.mat, f);
+  }
+  for (const m of S.materiais) for (const mod of S.modulos) {
+    const f = previsto(m, mod) - (saidoMod[mod.id + "|" + m.id] || 0);
+    if (f > 0) soma(falta, m.id, f);
+  }
+  for (const m of S.materiais) {
+    const c = (falta[m.id] || 0) - Math.max(0, saldo[m.id] || 0) - (aChegar[m.id] || 0) - (solAberta[m.id] || 0);
+    if (c > 1e-6) comprar[m.id] = c;
+  }
+  return { saldo, saidoMod, receb, pedidoSol, aChegar, solAberta, falta, comprar };
+}
+// pedido: quanto falta chegar por item e o estado
+function estadoPedido(p, C) {
+  const itens = p.itens.map(it => ({ ...it, rec: C.receb[p.id + "|" + it.mat] || 0 }));
+  const falta = itens.some(i => i.rec < i.qtd - 1e-9), algum = itens.some(i => i.rec > 0);
+  const atrasado = !p.fechado && falta && itens.some(i => i.rec < i.qtd && i.prev && i.prev < hoje());
+  const st = p.fechado ? (falta ? "encerrado" : "recebido") : !falta ? "recebido" : algum ? "parcial" : "aguardando";
+  return { itens, st, atrasado };
+}
+const tagPedido = (e) => `<span class="tag ${e.st === "recebido" ? "ok" : e.st === "encerrado" ? "" : "wa"}">${e.st}</span>${e.atrasado ? '<span class="tag er">atrasado</span>' : ""}`;
+
+// ---------- navegação ----------
+let tela = "painel", sel = null, pilha = [];
+let aba = { materiais: "lista", compras: "comprar" }, busca = "", grupoSel = "", localConf = "";
+function ir(t, id) {
+  if (["painel", "materiais", "compras", "conferir", "ajustes"].includes(t)) pilha = [];
+  else pilha.push([tela, sel]);
+  tela = t; sel = id ?? null; render(); scrollTo(0, 0);
+}
+function voltar() { [tela, sel] = pilha.pop() || ["painel", null]; render(); }
+function render() {
+  const C = calc();
+  btVoltar.classList.toggle("hide", !pilha.length);
+  nav.querySelectorAll("button").forEach(b => b.setAttribute("aria-current", b.dataset.t === (pilha[0]?.[0] || tela)));
+  subtit.textContent = "";
+  app.innerHTML = { painel, materiais, material, compras, solic, pedido, conferir, ajustes }[tela](C);
+  if (tela === "materiais") listaMat(C);
+  cabecalho();
+}
+function titulo(t, s) { document.getElementById("titulo").textContent = t; subtit.textContent = s || ""; }
+
+// ---------- painel ----------
+function painel(C) {
+  titulo("Estoque da Obra", S.materiais.length + " materiais");
+  if (!S.materiais.length) return `<div class="card"><p>Comece por <b>Ajustes</b>: cadastre os módulos (casas tipo 1 e tipo 2), os locais de armazenamento e importe a planilha de quantitativos.</p>
+    <p class="muted">Depois, em <b>Compras</b>, importe os pedidos do Sienge em PDF.</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
+  const comprar = Object.entries(C.comprar).sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0])));
+  const atrasados = S.pedidos.map(p => [p, estadoPedido(p, C)]).filter(([, e]) => e.atrasado);
+  const semConf = S.materiais.filter(m => (C.saldo[m.id] || 0) > 0).sort((a, b) => (a.conf || "").localeCompare(b.conf || "")).slice(0, 8);
+  const ub = S.meta.backup;
+  return `<div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida()">Lançar saída</button></div>
+  <div class="card"><div class="row"><h3 style="margin:0">Precisa comprar</h3><span class="n big">${comprar.length}</span></div>
+    ${comprar.slice(0, 8).map(([id, q]) => `<div class="it" onclick="ir('material','${id}')"><span class="lb">${esc(nomeMat(id))}</span><span class="q">${fN(q)} ${esc(unMat(id))}</span></div>`).join("") || `<p class="muted">Nada por enquanto.</p>`}
+    ${comprar.length ? `<button class="btn sec" style="margin-top:8px" onclick="aba.compras='comprar';ir('compras')">Ver tudo e gerar solicitação</button>` : ""}</div>
+  ${atrasados.length ? `<div class="card"><h3>Pedidos atrasados</h3>${atrasados.map(([p]) => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span><span class="tag er">atrasado</span></div>`).join("")}</div>` : ""}
+  <div class="card"><h3>Há mais tempo sem conferir</h3>
+    ${semConf.map(m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(locaisDe(m))}</small></span><span class="q">${m.conf ? "há " + dias(m.conf, hoje()) + " dias" : '<span class="tag wa">nunca</span>'}</span></div>`).join("") || `<p class="muted">Nenhum material com saldo.</p>`}
+    <button class="btn sec" style="margin-top:8px" onclick="ir('conferir')">Fazer conferência</button></div>
+  <p class="muted" style="color:${ub && dias(ub, hoje()) < 15 ? "var(--tx3)" : "var(--wa-tx)"}">${ub ? "Último backup: " + fmt(ub) + " (há " + dias(ub, hoje()) + " dias)" : "Você nunca exportou backup."}</p>`;
+}
+const locaisDe = m => (m.locais || []).map(id => S.locais.find(l => l.id === id)?.nome).filter(Boolean).join(", ") || "sem local";
+
+// ---------- materiais ----------
+function materiais() {
+  titulo("Materiais", S.materiais.length + " cadastrados");
+  const grupos = [...new Set(S.materiais.map(m => m.grupo).filter(Boolean))].sort();
+  return `<div class="seg noprint"><button aria-pressed="${aba.materiais === "lista"}" onclick="aba.materiais='lista';render()">Lista</button><button aria-pressed="${aba.materiais === "local"}" onclick="aba.materiais='local';render()">Onde está</button></div>
+  <div class="row noprint" style="margin-bottom:10px"><input id="qBusca" placeholder="Buscar nome ou código" value="${esc(busca)}" oninput="busca=this.value;listaMat()">
+    <select class="n" style="width:40%" onchange="grupoSel=this.value;listaMat()"><option value="">Todos os grupos</option>${grupos.map(g => `<option ${g === grupoSel ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
+  ${aba.materiais === "local" ? `<button class="btn sec noprint" style="margin-bottom:10px" onclick="print()">Imprimir</button>` : `<button class="btn sec noprint" style="margin-bottom:10px" onclick="dlgMaterial()">+ Material avulso</button>`}
+  <div id="lm"></div>`;
+}
+function listaMat(C = calc()) {
+  const q = busca.trim().toUpperCase();
+  const ms = S.materiais.filter(m => (!grupoSel || m.grupo === grupoSel) && (!q || (m.nome + " " + m.cod).toUpperCase().includes(q))).sort(porNome);
+  const linha = m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc([m.cod, m.grupo].filter(Boolean).join(" · "))}${aba.materiais === "lista" ? " · " + esc(locaisDe(m)) : ""}</small></span>
+    <span class="q">${fN(C.saldo[m.id])} ${esc(m.un)}${C.comprar[m.id] ? `<small style="color:var(--wa-tx)">comprar ${fN(C.comprar[m.id])}</small>` : ""}</span></div>`;
+  if (aba.materiais === "lista") { lm.innerHTML = `<div class="card">${ms.map(linha).join("") || `<p class="empty">Nenhum material.</p>`}</div>`; return; }
+  // onde está: só o que tem saldo, agrupado por local
+  const comSaldo = ms.filter(m => (C.saldo[m.id] || 0) > 0);
+  const grupos = [...S.locais.map(l => [l.nome, comSaldo.filter(m => m.locais?.includes(l.id))]), ["Sem local", comSaldo.filter(m => !m.locais?.length)]];
+  lm.innerHTML = grupos.filter(([, ms]) => ms.length).map(([nome, ms]) => `<h2>${esc(nome)}</h2><div class="card">${ms.map(linha).join("")}</div>`).join("") || `<p class="empty">Nenhum material com saldo.</p>`;
+}
+
+function material(C) {
+  const m = mat(sel); if (!m) { voltar(); return ""; }
+  titulo(m.nome, [m.cod, m.grupo].filter(Boolean).join(" · "));
+  const movs = S.movs.filter(x => x.mat === m.id).sort((a, b) => b.data.localeCompare(a.data));
+  const rotMov = x => ({ entrada: "Entrada" + (x.ped ? " · pedido " + esc(S.pedidos.find(p => p.id === x.ped)?.num || "") : ""), saida: "Saída · " + esc(S.modulos.find(o => o.id === x.mod)?.nome || ""), transf: "Transferência · " + esc(x.obra), ajuste: "Ajuste de conferência", anterior: "Já usado antes do app · " + esc(S.modulos.find(o => o.id === x.mod)?.nome || "") }[x.tipo]);
+  return `<div class="card"><span class="muted">Em estoque</span><div class="big">${fN(C.saldo[m.id])} <span style="font-size:16px">${esc(m.un)}</span></div>
+    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${m.conf ? "conferido em " + fmt(m.conf) + " (há " + dias(m.conf, hoje()) + " dias)" : "nunca conferido"}</p></div>
+  <div class="kpis"><div><b>${fN(C.aChegar[m.id])}</b><span>a chegar (pedidos)</span></div><div><b>${fN(C.solAberta[m.id])}</b><span>solicitado sem pedido</span></div>
+    <div><b>${fN(C.falta[m.id])}</b><span>falta usar nos módulos</span></div><div><b style="color:${C.comprar[m.id] ? "var(--wa-tx)" : "inherit"}">${fN(C.comprar[m.id])}</b><span>precisa comprar</span></div></div>
+  <div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida('${m.id}')">Saída</button><button class="btn sec" onclick="dlgMaterial('${m.id}')">Editar</button></div>
+  ${S.modulos.length ? `<h2>Previsão por módulo</h2><div class="card"><table><tr><th>Módulo</th><th>Previsto</th><th>Já saiu</th><th>Falta</th></tr>
+    ${S.modulos.map(o => { const p = previsto(m, o), s = C.saidoMod[o.id + "|" + m.id] || 0; return `<tr><td>${esc(o.nome)}</td><td>${fN(p)}</td><td>${fN(s)}</td><td>${fN(Math.max(0, p - s))}</td></tr>`; }).join("")}</table>
+    <p class="muted" style="margin:8px 0 0">Por casa: tipo 1 = ${fN(m.c1)} · tipo 2 = ${fN(m.c2)} ${esc(m.unQ || m.un)}${(+m.fator || 1) !== 1 ? " · fator " + fN(m.fator) : ""}</p></div>` : ""}
+  <h2>Histórico</h2><div class="card">${movs.map(x => `<div class="it" style="cursor:default"><span class="lb">${rotMov(x)}<small>${fmt(x.data)}${x.obs ? " · " + esc(x.obs) : ""}</small></span>
+    <span class="q">${x.tipo === "entrada" || (x.tipo === "ajuste" && x.qtd > 0) ? "+" : x.tipo === "anterior" ? "" : "−"}${fN(Math.abs(x.qtd))}</span><button class="icobtn" aria-label="Apagar" onclick="apagarMov('${x.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("") || `<p class="muted">Sem movimentações.</p>`}</div>`;
+}
+function apagarMov(id) { if (!confirm("Apagar este lançamento?")) return; S.movs = S.movs.filter(x => x.id !== id); save(); render(); }
+
+function dlgMaterial(id) {
+  const m = id ? mat(id) : { nome: "", cod: "", un: "", grupo: "", c1: 0, c2: 0, unQ: "", fator: 1, locais: [] };
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarMaterial('${id || ""}')"><h3>${id ? "Editar material" : "Material avulso"}</h3>
+    <div class="field"><label>Nome</label><input id="mNome" required value="${esc(m.nome)}"></div>
+    <div class="row field"><div><label>Código Sienge</label><input id="mCod" value="${esc(m.cod)}"></div><div><label>Unidade do estoque</label><input id="mUn" value="${esc(m.un)}"></div></div>
+    <div class="field"><label>Grupo</label><input id="mGrupo" value="${esc(m.grupo)}"></div>
+    <div class="row field"><div><label>Por casa · tipo 1</label><input id="mC1" type="number" step="any" min="0" value="${m.c1 || 0}"></div><div><label>Por casa · tipo 2</label><input id="mC2" type="number" step="any" min="0" value="${m.c2 || 0}"></div></div>
+    <div class="row field"><div><label>Unidade da planilha</label><input id="mUnQ" value="${esc(m.unQ)}"></div><div><label>Fator (planilha → estoque)</label><input id="mFator" type="number" step="any" min="0" value="${m.fator || 1}"></div></div>
+    <div class="field"><label>Onde está guardado</label>${S.locais.map(l => `<label class="row" style="color:var(--tx);font-size:15px;margin:6px 0"><input type="checkbox" class="n" name="mLoc" value="${l.id}" ${m.locais?.includes(l.id) ? "checked" : ""}><span>${esc(l.nome)}</span></label>`).join("") || `<p class="muted">Cadastre os locais em Ajustes.</p>`}</div>
+    <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div>
+    ${id ? `<button type="button" class="btn dan" style="margin-top:10px" onclick="excluirMaterial('${id}')">Excluir material</button>` : ""}</form>`;
+  D.showModal();
+}
+function salvarMaterial(id) {
+  const m = id ? mat(id) : { id: uid(), apelidos: [] };
+  Object.assign(m, { nome: mNome.value.trim(), cod: mCod.value.trim(), un: mUn.value.trim(), grupo: mGrupo.value.trim(), c1: +mC1.value || 0, c2: +mC2.value || 0,
+    unQ: mUnQ.value.trim(), fator: +mFator.value || 1, locais: [...D.querySelectorAll("[name=mLoc]:checked")].map(i => i.value) });
+  if (!id) S.materiais.push(m);
+  save(); D.close(); id ? render() : ir("material", m.id);
+}
+function excluirMaterial(id) {
+  if (S.movs.some(x => x.mat === id) || S.pedidos.some(p => p.itens.some(i => i.mat === id)) || S.solics.some(s => s.itens.some(i => i.mat === id)))
+    return alert("Esse material tem lançamentos, pedidos ou solicitações. Não dá pra excluir.");
+  if (!confirm("Excluir o material?")) return;
+  S.materiais = S.materiais.filter(m => m.id !== id); save(); D.close(); voltar();
+}
+
+// ---------- saída ----------
+const optsMat = () => S.materiais.slice().sort(porNome).map(m => `<option value="${esc(rotuloMat(m))}">`).join("");
+const matPorRotulo = t => S.materiais.find(m => rotuloMat(m) === t.trim()) || S.materiais.find(m => m.nome.toUpperCase() === t.trim().toUpperCase());
+function dlgSaida(id) {
+  const m = id && mat(id), C = calc();
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarSaida(event.submitter?.value)"><h3>Saída de material</h3>
+    <div class="field"><label>Material</label><input id="sMat" list="dlMat" required autocomplete="off" value="${m ? esc(rotuloMat(m)) : ""}" oninput="saldoSaida()"><datalist id="dlMat">${optsMat()}</datalist><span class="sub" id="sSaldo"></span></div>
+    <div class="row field"><div><label>Quantidade</label><input id="sQtd" type="number" step="any" min="0" required></div><div><label>Data</label><input id="sData" type="date" required value="${hoje()}"></div></div>
+    <div class="field"><label>Para onde</label><select id="sDest" onchange="sObraW.classList.toggle('hide',this.value!=='transf')">
+      ${S.modulos.map(o => `<option value="${o.id}">${esc(o.nome)}</option>`).join("")}<option value="transf">Transferência para outra obra</option>
+      ${S.modulos.map(o => `<option value="ant:${o.id}">${esc(o.nome)} · já usado antes do app (não mexe no estoque)</option>`).join("")}</select></div>
+    <div class="field hide" id="sObraW"><label>Obra de destino</label><input id="sObra" list="dlObras"><datalist id="dlObras">${[...new Set(S.movs.map(x => x.obra).filter(Boolean))].map(o => `<option value="${esc(o)}">`).join("")}</datalist></div>
+    <div class="field"><label>Observação</label><input id="sObs"></div>
+    <div class="row"><button type="button" class="btn sec" onclick="D.close()">Fechar</button><button class="btn sec" value="outra">Salvar e lançar outra</button><button class="btn" value="ok">Salvar</button></div></form>`;
+  D.showModal(); saldoSaida();
+  if (!S.modulos.length) sObraW.classList.remove("hide");
+  (m ? sQtd : sMat).focus();
+}
+function saldoSaida() { const m = matPorRotulo(sMat.value); sSaldo.textContent = m ? `Em estoque: ${fN(calc().saldo[m.id])} ${m.un}` : ""; }
+function salvarSaida(modo) {
+  const m = matPorRotulo(sMat.value);
+  if (!m) return alert("Escolha um material da lista.");
+  const qtd = +sQtd.value; if (!(qtd > 0)) return alert("Informe a quantidade.");
+  const d = sDest.value, mv = { id: uid(), data: sData.value, mat: m.id, qtd, obs: sObs.value.trim() };
+  if (d === "transf") { if (!sObra.value.trim()) return alert("Informe a obra de destino."); Object.assign(mv, { tipo: "transf", obra: sObra.value.trim() }); }
+  else if (d.startsWith("ant:")) Object.assign(mv, { tipo: "anterior", mod: d.slice(4) });
+  else Object.assign(mv, { tipo: "saida", mod: d });
+  S.movs.push(mv); save();
+  if (modo === "outra") { sMat.value = ""; sQtd.value = ""; sObs.value = ""; sSaldo.textContent = "Lançado. Próximo material:"; sMat.focus(); render(); }
+  else { D.close(); render(); }
+}
+
+// ---------- compras: precisa comprar, solicitações, pedidos ----------
+function compras(C) {
+  titulo("Compras");
+  const a = aba.compras;
+  const seg = `<div class="seg"><button aria-pressed="${a === "comprar"}" onclick="aba.compras='comprar';render()">Comprar</button><button aria-pressed="${a === "solics"}" onclick="aba.compras='solics';render()">Solicitações</button><button aria-pressed="${a === "pedidos"}" onclick="aba.compras='pedidos';render()">Pedidos</button></div>`;
+  if (a === "comprar") {
+    const ls = Object.entries(C.comprar).map(([id, q]) => [mat(id), q]).sort((x, y) => porNome(x[0], y[0]));
+    return seg + `<p class="muted">Falta usar nos módulos − estoque − pedidos a chegar − solicitações sem pedido.</p>
+      ${ls.length ? `<div class="card">${ls.map(([m, q]) => `<label class="it"><input type="checkbox" class="n" name="cp" value="${m.id}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)}</small></span>
+        <input class="cnt" type="number" step="any" min="0" id="cq_${m.id}" value="${+q.toFixed(2)}"><span class="n muted" style="width:44px">${esc(m.un)}</span></label>`).join("")}</div>
+      <button class="btn" onclick="criarSolic()">Criar solicitação com os marcados</button>` : `<p class="empty">Nada a comprar.</p>`}`;
+  }
+  if (a === "solics") {
+    const ss = S.solics.slice().sort((x, y) => y.data.localeCompare(x.data));
+    return seg + `<button class="btn" style="margin-bottom:12px" onclick="criarSolic(true)">+ Nova solicitação</button>
+      <div class="card">${ss.map(s => { const f = s.itens.filter(i => i.qtd - (C.pedidoSol[s.id + "|" + i.mat] || 0) > 1e-9).length;
+        return `<div class="it" onclick="ir('solic','${s.id}')"><span class="lb">Solicitação ${esc(s.num || "(sem número)")}<small>${fmt(s.data)} · ${s.itens.length} itens</small></span>
+        <span class="tag ${s.fechada || !f ? "ok" : "wa"}">${s.fechada ? "fechada" : f ? f + " sem pedido" : "atendida"}</span></div>`; }).join("") || `<p class="muted">Nenhuma solicitação.</p>`}</div>`;
+  }
+  const ps = S.pedidos.slice().sort((x, y) => y.data.localeCompare(x.data));
+  return seg + `<button class="btn" style="margin-bottom:12px" onclick="fPdf.click()">Importar pedido (PDF do Sienge)</button>
+    <div class="card">${ps.map(p => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)} · ${fmt(p.data)}${p.etapa ? " · " + esc(p.etapa) : ""}</small></span><span class="q">${tagPedido(estadoPedido(p, C))}</span></div>`).join("") || `<p class="muted">Nenhum pedido.</p>`}</div>`;
+}
+function criarSolic(vazia) {
+  const itens = vazia ? [] : [...document.querySelectorAll("[name=cp]:checked")].map(i => ({ mat: i.value, qtd: +document.getElementById("cq_" + i.value).value || 0 })).filter(i => i.qtd > 0);
+  if (!vazia && !itens.length) return alert("Marque pelo menos um material.");
+  const num = prompt("Número da solicitação no Sienge (pode deixar em branco e preencher depois):");
+  if (num === null) return;
+  const s = { id: uid(), num: num.trim(), data: hoje(), obs: "", itens };
+  S.solics.push(s); save(); ir("solic", s.id);
+}
+function solic(C) {
+  const s = S.solics.find(x => x.id === sel); if (!s) { voltar(); return ""; }
+  titulo("Solicitação " + (s.num || "(sem número)"), fmt(s.data) + (s.fechada ? " · fechada" : ""));
+  const peds = S.pedidos.filter(p => p.solic === s.id);
+  return `<div class="card"><table><tr><th>Material</th><th>Pedido</th><th>Solicitado</th><th></th></tr>
+    ${s.itens.map((i, k) => `<tr><td>${esc(nomeMat(i.mat))}<span class="sub">${esc(mat(i.mat)?.cod)}</span></td><td>${fN(C.pedidoSol[s.id + "|" + i.mat])}</td>
+      <td><input class="cnt" style="width:90px" type="number" step="any" min="0" value="${i.qtd}" onchange="S.solics.find(x=>x.id==='${s.id}').itens[${k}].qtd=+this.value||0;save();render()"> ${esc(unMat(i.mat))}</td>
+      <td><button class="icobtn" aria-label="Tirar" onclick="tirarItemSolic(${k})"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td></tr>`).join("") || `<tr><td colspan="4" class="muted">Sem itens.</td></tr>`}</table>
+    <form class="row" style="margin-top:10px" onsubmit="event.preventDefault();addItemSolic()"><input id="aiMat" list="dlMat" placeholder="Adicionar material" autocomplete="off"><datalist id="dlMat">${optsMat()}</datalist>
+      <input id="aiQtd" class="n" style="width:90px" type="number" step="any" min="0" placeholder="Qtd"><button class="btn sm n">+</button></form></div>
+  ${peds.length ? `<h2>Pedidos ligados</h2><div class="card">${peds.map(p => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span></div>`).join("")}</div>` : ""}
+  <div class="field"><label>Observação</label><input value="${esc(s.obs)}" onchange="S.solics.find(x=>x.id==='${s.id}').obs=this.value;save()"></div>
+  <div class="row" style="margin-bottom:10px"><button class="btn sec" onclick="copiarSolic()">Copiar lista</button><button class="btn sec" onclick="numSolic()">Número Sienge</button></div>
+  <div class="row"><button class="btn sec" onclick="fecharSolic()">${s.fechada ? "Reabrir" : "Fechar solicitação"}</button><button class="btn dan" onclick="excluirSolic()">Excluir</button></div>`;
+}
+const solAtual = () => S.solics.find(x => x.id === sel);
+function addItemSolic() {
+  const m = matPorRotulo(aiMat.value); if (!m) return alert("Escolha um material da lista.");
+  const q = +aiQtd.value; if (!(q > 0)) return alert("Informe a quantidade.");
+  solAtual().itens.push({ mat: m.id, qtd: q }); save(); render(); document.getElementById("aiMat").focus();
+}
+function tirarItemSolic(k) { solAtual().itens.splice(k, 1); save(); render(); }
+function numSolic() { const n = prompt("Número da solicitação no Sienge:", solAtual().num); if (n !== null) { solAtual().num = n.trim(); save(); render(); } }
+function fecharSolic() { solAtual().fechada = !solAtual().fechada; save(); render(); }
+function excluirSolic() {
+  if (!confirm("Excluir esta solicitação?")) return;
+  S.pedidos.forEach(p => { if (p.solic === sel) p.solic = null; });
+  S.solics = S.solics.filter(x => x.id !== sel); save(); voltar();
+}
+function copiarSolic() {
+  const t = solAtual().itens.map(i => { const m = mat(i.mat); return `${m?.cod || "-"}\t${m?.nome}\t${fN(i.qtd)}\t${m?.un}`; }).join("\n");
+  navigator.clipboard.writeText(t).then(() => alert("Lista copiada (código, nome, quantidade, unidade)."), () => prompt("Copie a lista:", t));
+}
+
+// ---------- pedido: importar PDF ----------
+let novoPed = null;
+async function importarPdf(f) {
+  if (!f) return;
+  let p;
+  try {
+    const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+    const pags = [];
+    for (let i = 1; i <= doc.numPages; i++) pags.push((await (await doc.getPage(i)).getTextContent()).items.map(t => ({ x: t.transform[4], y: t.transform[5], s: t.str })));
+    p = lerPedido(pags);
+  } catch (e) { return alert("Não consegui abrir o PDF: " + e.message); }
+  if (!p.itens.length) return alert("Não encontrei itens nesse PDF. É um pedido do Sienge?");
+  if (S.pedidos.some(x => x.num === p.num) && !confirm(`O pedido ${p.num} já foi importado. Importar de novo?`)) return;
+  // sugestão de material: equivalência já gravada; senão, o único material com o mesmo código de insumo
+  p.itens.forEach(it => {
+    it.chave = chaveItem(it);
+    const igual = S.materiais.find(m => m.apelidos?.includes(it.chave));
+    const mesmoCod = S.materiais.filter(m => m.cod.split("-")[0] === it.cod);
+    it.mat = igual?.id || (mesmoCod.length === 1 ? mesmoCod[0].id : "");
+    it.auto = !!igual;
+  });
+  const etapa = (p.obra + " " + p.unidade).match(/ETAPA\s*\d+/i)?.[0] || "";
+  novoPed = { ...p, etapa, obra: p.obra.replace(/\s*-\s*ETAPA\s*\d+\s*$/i, "") };
+  dlgPedido();
+}
+function dlgPedido() {
+  const p = novoPed;
+  const sols = S.solics.filter(s => !s.fechada);
+  const obras = [...new Set(S.pedidos.map(x => x.obra).concat(p.obra).filter(Boolean))], etapas = [...new Set(S.pedidos.map(x => x.etapa).concat(p.etapa).filter(Boolean))];
+  const opcoes = it => {
+    const cand = S.materiais.filter(m => m.cod.split("-")[0] === it.cod).sort(porNome), resto = S.materiais.filter(m => !cand.includes(m)).sort(porNome);
+    const o = m => `<option value="${m.id}" ${m.id === it.mat ? "selected" : ""}>${esc(rotuloMat(m))}</option>`;
+    return `<option value="">— escolher —</option><option value="novo" ${it.mat === "novo" ? "selected" : ""}>+ Material novo (cria no catálogo)</option>
+      ${cand.length ? `<optgroup label="Mesmo código de insumo">${cand.map(o).join("")}</optgroup>` : ""}<optgroup label="Todos">${resto.map(o).join("")}</optgroup>`;
+  };
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarPedido()"><h3>Pedido ${esc(p.num)}</h3>
+    <p class="muted" style="margin-top:-6px">${esc(p.fornecedor)} · ${fmt(p.data)}</p>
+    <div class="row field"><div><label>Obra</label><input id="pObra" list="dlOb" value="${esc(p.obra)}"><datalist id="dlOb">${obras.map(o => `<option value="${esc(o)}">`).join("")}</datalist></div>
+      <div><label>Etapa</label><input id="pEtapa" list="dlEt" value="${esc(p.etapa)}"><datalist id="dlEt">${etapas.map(o => `<option value="${esc(o)}">`).join("")}</datalist></div></div>
+    <div class="field"><label>Solicitação</label><select id="pSol"><option value="">Nenhuma</option>${sols.map(s => `<option value="${s.id}">${esc(s.num || "(sem número)")} · ${fmt(s.data)} · ${s.itens.length} itens</option>`).join("")}</select></div>
+    <label>Itens (${p.itens.length}) — escolha o material do estoque de cada um</label>
+    ${p.itens.map((it, k) => `<div class="map ${it.auto ? "" : "pend"}"><b style="font-size:14px">${esc(it.cod)} - ${esc(it.nome)} ${esc(it.comp)}</b>
+      <span class="sub">${fN(it.qtd)} ${esc(it.un)}${it.prev ? " · entrega " + fmt(it.prev) : ""}${it.auto ? " · reconhecido" : ""}</span>
+      <select style="margin-top:6px" onchange="novoPed.itens[${k}].mat=this.value">${opcoes(it)}</select></div>`).join("")}
+    <div class="row" style="margin-top:12px"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar pedido</button></div></form>`;
+  D.showModal();
+}
+function salvarPedido() {
+  const p = novoPed;
+  if (p.itens.some(it => !it.mat)) return alert("Escolha o material de todos os itens (ou \"Material novo\").");
+  for (const it of p.itens) {
+    if (it.mat === "novo") {
+      const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un, grupo: "", c1: 0, c2: 0, unQ: "", fator: 1, locais: [], apelidos: [] };
+      S.materiais.push(m); it.mat = m.id;
+    }
+    const m = mat(it.mat);
+    m.apelidos ??= []; if (!m.apelidos.includes(it.chave)) m.apelidos.push(it.chave);
+    if (!m.un) m.un = it.un;
+  }
+  const ped = { id: uid(), num: p.num, data: p.data, fornecedor: p.fornecedor, obra: pObra.value.trim(), etapa: pEtapa.value.trim(), solic: pSol.value || null, fechado: false,
+    itens: p.itens.map(it => ({ mat: it.mat, qtd: it.qtd, prev: it.prev, desc: `${it.cod} - ${it.nome} ${it.comp}`.trim() })) };
+  S.pedidos.push(ped); save(); D.close(); novoPed = null;
+  aba.compras = "pedidos"; pilha = []; tela = "compras"; ir("pedido", ped.id);
+}
+
+// ---------- pedido: detalhe e recebimento ----------
+const pedAtual = () => S.pedidos.find(x => x.id === sel);
+function pedido(C) {
+  const p = pedAtual(); if (!p) { voltar(); return ""; }
+  const e = estadoPedido(p, C), s = S.solics.find(x => x.id === p.solic);
+  titulo("Pedido " + p.num, p.fornecedor);
+  return `<div class="card"><p style="margin:0">${tagPedido(e)}</p>
+    <p class="muted" style="margin:6px 0 0">Emitido em ${fmt(p.data)} · ${esc([p.obra, p.etapa].filter(Boolean).join(" · "))}</p>
+    <p class="muted" style="margin:4px 0 0">Solicitação: ${s ? `<a href="#" onclick="ir('solic','${s.id}');return false">${esc(s.num || "(sem número)")}</a>` : "nenhuma"} · <a href="#" onclick="editarPedido();return false">editar</a></p></div>
+  <div class="card"><table><tr><th>Material</th><th>Pedido</th><th>Chegou</th><th>Falta</th></tr>
+    ${e.itens.map(i => `<tr><td><a href="#" onclick="ir('material','${i.mat}');return false">${esc(nomeMat(i.mat))}</a><span class="sub">${i.prev ? "entrega " + fmt(i.prev) : ""}${i.rec < i.qtd && i.prev && i.prev < hoje() && !p.fechado ? ' <span class="tag er">atrasado</span>' : ""}</span></td>
+      <td>${fN(i.qtd)}</td><td>${fN(i.rec)}</td><td>${fN(Math.max(0, i.qtd - i.rec))} ${esc(unMat(i.mat))}</td></tr>`).join("")}</table></div>
+  ${!p.fechado && e.st !== "recebido" ? `<button class="btn" style="margin-bottom:10px" onclick="dlgReceber()">Receber material</button>` : ""}
+  <div class="row"><button class="btn sec" onclick="pedAtual().fechado=!pedAtual().fechado;save();render()">${p.fechado ? "Reabrir pedido" : "Encerrar (o resto não vem)"}</button><button class="btn dan" onclick="excluirPedido()">Excluir</button></div>`;
+}
+function editarPedido() {
+  const p = pedAtual();
+  D.innerHTML = `<form onsubmit="event.preventDefault();Object.assign(pedAtual(),{obra:eObra.value.trim(),etapa:eEtapa.value.trim(),solic:eSol.value||null});save();D.close();render()"><h3>Pedido ${esc(p.num)}</h3>
+    <div class="row field"><div><label>Obra</label><input id="eObra" value="${esc(p.obra)}"></div><div><label>Etapa</label><input id="eEtapa" value="${esc(p.etapa)}"></div></div>
+    <div class="field"><label>Solicitação</label><select id="eSol"><option value="">Nenhuma</option>${S.solics.map(s => `<option value="${s.id}" ${s.id === p.solic ? "selected" : ""}>${esc(s.num || "(sem número)")} · ${fmt(s.data)}</option>`).join("")}</select></div>
+    <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+  D.showModal();
+}
+function excluirPedido() {
+  const n = S.movs.filter(x => x.ped === sel).length;
+  if (!confirm(n ? `Excluir o pedido e as ${n} entrada(s) dele no estoque?` : "Excluir o pedido?")) return;
+  S.movs = S.movs.filter(x => x.ped !== sel); S.pedidos = S.pedidos.filter(x => x.id !== sel); save(); voltar();
+}
+function dlgReceber() {
+  const p = pedAtual(), e = estadoPedido(p, calc());
+  const pend = e.itens.filter(i => i.rec < i.qtd - 1e-9);
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarReceb()"><h3>Receber · pedido ${esc(p.num)}</h3>
+    <p class="muted" style="margin-top:-6px">Confira a quantidade que chegou de cada item. Deixe 0 no que não veio.</p>
+    ${pend.map(i => `<div class="it" style="cursor:default"><span class="lb">${esc(nomeMat(i.mat))}<small>falta ${fN(i.qtd - i.rec)} ${esc(unMat(i.mat))}</small></span><input class="cnt" type="number" step="any" min="0" data-mat="${i.mat}" value="${+(i.qtd - i.rec).toFixed(4)}"></div>`).join("")}
+    <div class="row field" style="margin-top:12px"><div><label>Data</label><input id="rData" type="date" required value="${hoje()}"></div>
+      <div><label>Guardado em</label><select id="rLocal"><option value="">(não mudar)</option>${S.locais.map(l => `<option value="${l.id}">${esc(l.nome)}</option>`).join("")}</select></div></div>
+    <div class="field"><label>Nota fiscal / observação</label><input id="rObs"></div>
+    <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Dar entrada</button></div></form>`;
+  D.showModal();
+}
+function salvarReceb() {
+  const p = pedAtual(); let n = 0;
+  D.querySelectorAll("[data-mat]").forEach(i => {
+    const q = +i.value; if (!(q > 0)) return;
+    S.movs.push({ id: uid(), data: rData.value, tipo: "entrada", mat: i.dataset.mat, qtd: q, ped: p.id, obs: rObs.value.trim() }); n++;
+    const m = mat(i.dataset.mat); if (rLocal.value && !m.locais.includes(rLocal.value)) m.locais.push(rLocal.value);
+  });
+  if (!n) return alert("Nenhuma quantidade informada.");
+  save(); D.close(); render();
+}
+
+// ---------- conferência ----------
+// Contagem por local; o estoque é um só, então o material só é ajustado quando
+// foi contado em todos os locais onde está. Contou 0 num local = saiu de lá.
+let contagem = {}; // mat -> {local -> qtd}
+function conferir(C) {
+  titulo("Conferência", "conte o que tem em cada local");
+  const locs = [...S.locais.map(l => [l.id, l.nome]), ["_", "Sem local"]].filter(([id]) => !localConf || id === localConf);
+  const lista = locs.map(([lid, nome]) => {
+    const ms = S.materiais.filter(m => lid === "_" ? !m.locais?.length && (C.saldo[m.id] || 0) > 0 : m.locais?.includes(lid)).sort(porNome);
+    return ms.length ? `<h2>${esc(nome)}</h2><div class="card">${ms.map(m => `<div class="it" style="cursor:default"><span class="lb">${esc(m.nome)}
+      <small>no app: ${fN(C.saldo[m.id])} ${esc(m.un)}${m.locais?.length > 1 ? " (somando " + esc(locaisDe(m)) + ")" : ""} · ${m.conf ? "conferido há " + dias(m.conf, hoje()) + " dias" : "nunca conferido"}</small></span>
+      <input class="cnt" type="number" step="any" min="0" placeholder="contado" value="${contagem[m.id]?.[lid] ?? ""}" oninput="(contagem['${m.id}']??={})['${lid}']=this.value"></div>`).join("")}</div>` : "";
+  }).join("");
+  return `<div class="field"><select onchange="localConf=this.value;render()"><option value="">Todos os locais</option>${S.locais.map(l => `<option value="${l.id}" ${l.id === localConf ? "selected" : ""}>${esc(l.nome)}</option>`).join("")}<option value="_" ${localConf === "_" ? "selected" : ""}>Sem local</option></select></div>
+    ${lista || `<p class="empty">Nenhum material aqui.</p>`}
+    ${lista ? `<button class="btn" onclick="salvarConferencia()">Salvar conferência</button>` : ""}`;
+}
+function salvarConferencia() {
+  const C = calc(), ajustados = [], faltam = [];
+  for (const [id, cs] of Object.entries(contagem)) {
+    const m = mat(id); if (!m) continue;
+    const locs = m.locais?.length ? m.locais : ["_"];
+    if (!locs.some(l => cs[l] !== undefined && cs[l] !== "")) continue;
+    const semContar = locs.filter(l => cs[l] === undefined || cs[l] === "");
+    if (semContar.length) { faltam.push(`${m.nome}: falta contar em ${semContar.map(l => S.locais.find(x => x.id === l)?.nome || "sem local").join(", ")}`); continue; }
+    const total = locs.reduce((t, l) => t + (+cs[l] || 0), 0), dif = total - (C.saldo[id] || 0);
+    if (Math.abs(dif) > 1e-9) S.movs.push({ id: uid(), data: hoje(), tipo: "ajuste", mat: id, qtd: dif, obs: `contado ${fN(total)}, app dizia ${fN(C.saldo[id])}` });
+    if (m.locais?.length) m.locais = m.locais.filter(l => +cs[l] > 0);
+    m.conf = hoje(); ajustados.push(`${m.nome}: ${Math.abs(dif) > 1e-9 ? (dif > 0 ? "+" : "") + fN(dif) : "ok"}`);
+    delete contagem[id];
+  }
+  if (!ajustados.length && !faltam.length) return alert("Nenhuma contagem preenchida.");
+  save(); render();
+  alert((ajustados.length ? "Conferidos:\n" + ajustados.join("\n") : "") + (faltam.length ? "\n\nNão salvos (o material está em mais de um local):\n" + faltam.join("\n") : ""));
+}
+
+// ---------- ajustes ----------
+function ajustes() {
+  titulo("Ajustes");
+  return `<h2>Módulos</h2><div class="card"><p class="muted" style="margin-top:0">Quantas casas de cada tipo tem em cada módulo. A previsão de material sai daqui.</p>
+    ${S.modulos.map(o => `<div class="row" style="margin-bottom:8px"><input value="${esc(o.nome)}" onchange="modu('${o.id}').nome=this.value.trim();save()">
+      <input class="n" style="width:70px" type="number" min="0" title="Casas tipo 1" value="${o.t1}" onchange="modu('${o.id}').t1=+this.value||0;save()">
+      <input class="n" style="width:70px" type="number" min="0" title="Casas tipo 2" value="${o.t2}" onchange="modu('${o.id}').t2=+this.value||0;save()">
+      <button class="icobtn n" aria-label="Remover" onclick="tirarModulo('${o.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("")}
+    ${S.modulos.length ? `<p class="muted">colunas: nome · casas tipo 1 · casas tipo 2</p>` : ""}
+    <button class="btn sec" onclick="addModulo()">+ Módulo</button></div>
+  <h2>Locais de armazenamento</h2><div class="card">
+    ${S.locais.map(l => `<div class="row" style="margin-bottom:8px"><input value="${esc(l.nome)}" onchange="S.locais.find(x=>x.id==='${l.id}').nome=this.value.trim();save()">
+      <button class="icobtn n" aria-label="Remover" onclick="tirarLocal('${l.id}')"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`).join("")}
+    <button class="btn sec" onclick="addLocal()">+ Local</button></div>
+  <h2>Planilha de quantitativos</h2><div class="card"><p class="muted" style="margin-top:0">Lê o consumo por casa (modelo 1 e 2) de cada material. Pode importar de novo quando a planilha mudar: os valores são substituídos.</p>
+    <button class="btn sec" onclick="fXls.click()">Importar planilha (.xlsx)</button></div>
+  <h2>Google Drive</h2><div class="card">
+    <div class="field"><label>Client ID (do Google Cloud)</label><input id="aCid" value="${esc(S.config.driveClientId)}" placeholder="123456-abc.apps.googleusercontent.com" style="font-size:12px" onchange="S.config.driveClientId=this.value.trim();save()"></div>
+    <p class="muted">Pode usar o mesmo Client ID do app de Assistência. Os dados ficam no arquivo <code>estoque.json</code>, na pasta "Controle de Estoque" do seu Drive.</p>
+    <p style="font-size:13px">Estado: <b>${{ off: "desconectado", sync: "sincronizado" + (DRIVE.quando ? " às " + DRIVE.quando : ""), busy: "sincronizando…", err: "erro — " + esc(DRIVE.erro) }[DRIVE.estado]}</b></p>
+    <button class="btn" onclick="sincronizar(true)">${DRIVE.estado === "off" ? "Conectar e sincronizar" : "Sincronizar agora"}</button></div>
+  <h2>Backup</h2><div class="card"><p class="muted" style="margin-top:0">${S.meta.backup ? "Último backup: " + fmt(S.meta.backup) : "Nunca fez backup."}</p>
+    <div class="row"><button class="btn" onclick="exportar()">Exportar</button><button class="btn sec" onclick="fBk.click()">Importar</button></div></div>`;
+}
+const modu = id => S.modulos.find(o => o.id === id);
+function addModulo() { const n = prompt("Nome do módulo (ex: MÓDULO 1):"); if (n?.trim()) { S.modulos.push({ id: uid(), nome: n.trim(), t1: 0, t2: 0 }); save(); render(); } }
+function tirarModulo(id) {
+  if (S.movs.some(x => x.mod === id)) return alert("Esse módulo tem saídas lançadas. Não dá pra remover.");
+  if (confirm("Remover o módulo?")) { S.modulos = S.modulos.filter(o => o.id !== id); save(); render(); }
+}
+function addLocal() { const n = prompt("Nome do local (ex: Container 1):"); if (n?.trim()) { S.locais.push({ id: uid(), nome: n.trim() }); save(); render(); } }
+function tirarLocal(id) {
+  if (!confirm("Remover o local? Os materiais deixam de apontar pra ele.")) return;
+  S.locais = S.locais.filter(l => l.id !== id); S.materiais.forEach(m => m.locais = (m.locais || []).filter(l => l !== id)); save(); render();
+}
+
+// ---------- importar quantitativos ----------
+let quant = null;
+async function importarQuant(f) {
+  if (!f) return;
+  try {
+    if (!window.XLSX) await new Promise((ok, erro) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = ok; s.onerror = () => erro(new Error("sem internet?")); document.head.append(s); });
+    const wb = XLSX.read(await f.arrayBuffer());
+    quant = lerQuantitativo(wb.SheetNames.map(n => ({ nome: n, linhas: XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: false }) })));
+  } catch (e) { return alert("Não consegui ler a planilha: " + e.message); }
+  if (!quant.length) return alert("Não encontrei o bloco \"Quantidade de insumos em projeto\" em nenhuma aba.");
+  const abas = Object.entries(Object.groupBy(quant, l => l.aba));
+  D.innerHTML = `<form onsubmit="event.preventDefault();aplicarQuant()"><h3>Planilha de quantitativos</h3>
+    <p class="muted" style="margin-top:-6px">Marque as abas que entram. Se o mesmo material aparece em mais de uma aba marcada, as quantidades por casa se somam.</p>
+    ${abas.map(([a, ls]) => `<label class="it"><input type="checkbox" class="n" name="qa" value="${esc(a)}" checked><span class="lb">${esc(a)}<small>${ls.length} linhas</small></span></label>`).join("")}
+    <div class="row" style="margin-top:12px"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Importar</button></div></form>`;
+  D.showModal();
+}
+function aplicarQuant() {
+  const abas = new Set([...D.querySelectorAll("[name=qa]:checked")].map(i => i.value));
+  const tot = new Map(); // chave (código ou nome) -> {linha, c1, c2}
+  for (const l of quant.filter(l => abas.has(l.aba))) {
+    const k = l.cod || l.nome.toUpperCase();
+    const t = tot.get(k) || { l, c1: 0, c2: 0 }; tot.set(k, t);
+    if (l.modelo === 0 || l.modelo === 1) t.c1 += l.qtd;
+    if (l.modelo === 0 || l.modelo === 2) t.c2 += l.qtd; // ponytail: modelo 3 (só no esgoto) fica de fora até ter casa tipo 3
+  }
+  let novos = 0, atual = 0;
+  for (const [k, { l, c1, c2 }] of tot) {
+    let m = S.materiais.find(m => l.cod ? m.cod === l.cod : !m.cod && m.nome.toUpperCase() === k);
+    if (!m) { m = { id: uid(), nome: l.nome, cod: l.cod, un: l.un, grupo: l.aba, fator: 1, locais: [], apelidos: [] }; S.materiais.push(m); novos++; } else atual++;
+    Object.assign(m, { c1: +c1.toFixed(4), c2: +c2.toFixed(4), unQ: l.un }); m.grupo ||= l.aba;
+  }
+  save(); D.close(); render();
+  alert(`${novos} materiais novos, ${atual} atualizados.`);
+}
+
+// ---------- backup ----------
+function exportar() {
+  S.meta.backup = hoje(); save();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: "application/json" }));
+  a.download = `estoque-obra-${hoje()}.json`; a.click(); render();
+}
+function importarBackup(f) {
+  if (!f || !confirm("Substituir todos os dados pelo backup?")) return;
+  f.text().then(t => { const d = JSON.parse(t); if (!Array.isArray(d.materiais)) throw 0; S = migrar(d); save(); ir("painel"); })
+    .catch(() => alert("Arquivo inválido."));
+}
+
+// ---------- google drive (mesmo esquema do app de Assistência) ----------
+// ponytail: última versão ganha, sem mesclagem por registro. Usuário único;
+// sincroniza ao abrir e 3 s depois de cada alteração.
+const DRIVE = { estado: "off", erro: "", quando: null, timer: null };
+const SCOPE = "https://www.googleapis.com/auth/drive.file";
+function tokenValido() {
+  try { const t = JSON.parse(sessionStorage.getItem("estoque_tok") || "null"); return t && t.exp > Date.now() + 60000 ? t.tok : null; } catch (e) { return null; }
+}
+function conectar() {
+  return new Promise((res, rej) => {
+    if (!S.config.driveClientId) return rej(new Error("informe o Client ID nos ajustes"));
+    if (!window.google || !google.accounts) return rej(new Error("biblioteca do Google não carregou (sem internet?)"));
+    google.accounts.oauth2.initTokenClient({
+      client_id: S.config.driveClientId, scope: SCOPE,
+      callback: r => {
+        if (r.error) return rej(new Error(r.error));
+        sessionStorage.setItem("estoque_tok", JSON.stringify({ tok: r.access_token, exp: Date.now() + r.expires_in * 1000 }));
+        res(r.access_token);
+      },
+      error_callback: e => rej(new Error(e.type === "popup_closed" ? "janela fechada" : e.type || "erro"))
+    }).requestAccessToken({ prompt: "" });
+  });
+}
+async function dapi(path, opts = {}, upload = false) {
+  const tok = tokenValido(); if (!tok) throw new Error("não conectado");
+  const r = await fetch((upload ? "https://www.googleapis.com/upload/drive/v3/" : "https://www.googleapis.com/drive/v3/") + path,
+    Object.assign({}, opts, { headers: Object.assign({ Authorization: "Bearer " + tok }, opts.headers || {}) }));
+  if (r.status === 401) { sessionStorage.removeItem("estoque_tok"); throw new Error("sessão expirou, conecte de novo"); }
+  if (!r.ok) { let msg = ""; try { msg = (await r.json()).error.message; } catch (e) { } throw new Error("Drive respondeu " + r.status + (msg ? ": " + msg : "")); }
+  return r;
+}
+const dBuscar = async (nome, pasta) => {
+  const q = `name='${nome}' and trashed=false` + (pasta ? ` and '${pasta}' in parents` : "");
+  return (await (await dapi("files?q=" + encodeURIComponent(q) + "&fields=files(id,modifiedTime)")).json()).files[0] || null;
+};
+async function dCriar(nome, blob, pasta, mime) {
+  const meta = { name: nome, parents: pasta ? [pasta] : [] };
+  if (!blob) meta.mimeType = "application/vnd.google-apps.folder";
+  const fd = new FormData();
+  fd.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+  if (blob) fd.append("file", new Blob([blob], { type: mime }));
+  const r = await dapi(blob ? "files?uploadType=multipart&fields=id" : "files?fields=id", { method: "POST", body: blob ? fd : JSON.stringify(meta), headers: blob ? {} : { "Content-Type": "application/json" } }, !!blob);
+  return (await r.json()).id;
+}
+const dAtualizar = (id, blob, mime) => dapi("files/" + id + "?uploadType=media", { method: "PATCH", body: blob, headers: { "Content-Type": mime } }, true);
+async function sincronizar(interativo) {
+  if (DRIVE.estado === "busy") return;
+  let mudou = false;
+  try {
+    if (!tokenValido()) { if (!interativo) return; await conectar(); }
+    DRIVE.estado = "busy"; cabecalho();
+    const p = await dBuscar("Controle de Estoque"), pasta = p ? p.id : await dCriar("Controle de Estoque", null);
+    const arq = await dBuscar("estoque.json", pasta);
+    let subir = !arq;
+    if (arq) {
+      const remoto = migrar(JSON.parse(await (await dapi("files/" + arq.id + "?alt=media")).text()));
+      const rs = remoto.meta.salvoEm || "", ls = S.meta.salvoEm || "";
+      if (rs > ls) { remoto.config.driveClientId ||= S.config.driveClientId; S = remoto; localStorage.setItem(KEY, JSON.stringify(S)); mudou = true; }
+      else if (ls > rs) subir = true;
+    }
+    if (subir) {
+      const blob = new Blob([JSON.stringify(S)], { type: "application/json" });
+      if (arq) await dAtualizar(arq.id, blob, "application/json"); else await dCriar("estoque.json", blob, pasta, "application/json");
+    }
+    DRIVE.estado = "sync"; DRIVE.quando = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    DRIVE.estado = tokenValido() ? "err" : "off"; DRIVE.erro = e.message;
+    if (interativo) alert("Não sincronizou: " + e.message);
+  }
+  if (mudou || tela === "ajustes") render(); else cabecalho();
+}
+function agendarSync() {
+  if (!tokenValido()) return;
+  clearTimeout(DRIVE.timer);
+  DRIVE.timer = setTimeout(() => sincronizar(false), 3000);
+}
+function cabecalho() {
+  btnDrive.className = "icobtn " + DRIVE.estado;
+  btnDrive.title = { off: "Conectar ao Google Drive", sync: "Sincronizado" + (DRIVE.quando ? " às " + DRIVE.quando : ""), busy: "Sincronizando…", err: "Erro: " + DRIVE.erro }[DRIVE.estado];
+}
+btnDrive.onclick = () => { if (!S.config.driveClientId) { ir("ajustes"); return alert("Cole o Client ID do Google nos ajustes pra conectar ao Drive."); } sincronizar(true); };
+
+// ---------- teste das contas: abrir index.html?teste=1 ----------
+if (location.search.includes("teste")) {
+  S = vazio();
+  S.modulos = [{ id: "M1", nome: "M1", t1: 2, t2: 1 }];
+  S.materiais = [{ id: "a", nome: "A", cod: "1-1", un: "un", c1: 10, c2: 20, fator: 1, locais: [] }];
+  S.movs = [{ id: "1", tipo: "entrada", mat: "a", qtd: 15, ped: "P" }, { id: "2", tipo: "saida", mat: "a", qtd: 5, mod: "M1" }, { id: "3", tipo: "anterior", mat: "a", qtd: 5, mod: "M1" }, { id: "4", tipo: "ajuste", mat: "a", qtd: -1 }];
+  S.pedidos = [{ id: "P", solic: "S", itens: [{ mat: "a", qtd: 20 }] }];
+  S.solics = [{ id: "S", itens: [{ mat: "a", qtd: 25 }] }];
+  const C = calc(), ok = (c, m) => { if (!c) throw new Error(m); };
+  try {
+    ok(C.saldo.a === 9, "saldo: 15 − 5 − 1 (anterior não mexe)");
+    ok(C.falta.a === 30, "falta: 2×10 + 1×20 − 10 já saído");
+    ok(C.aChegar.a === 5 && C.solAberta.a === 5, "a chegar 20−15, solicitado sem pedido 25−20");
+    ok(C.comprar.a === 11, "comprar: 30 − 9 − 5 − 5");
+    const { st } = estadoPedido(S.pedidos[0], C); ok(st === "parcial", "pedido parcial");
+    document.body.innerHTML = "<h1 style='padding:20px'>Testes OK</h1>";
+  } catch (e) { document.body.innerHTML = "<h1 style='padding:20px;color:red'>FALHOU: " + e.message + "</h1>"; }
+  throw "fim do teste"; // não salva nada
+}
+
+render();
+if (tokenValido()) sincronizar(false);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
