@@ -191,8 +191,9 @@ function lerPedido(paginas) {
 // solic: {id, num, data, obs, fechada, itens:[{mat, qtd}]}
 // pedido: {id, num, data, fornecedor, obra, etapa, solic, fechado, itens:[{mat, qtd, prev, desc}]}
 // fornecedor: {id, nome, prazo (dias)}
+// prog: {"modulo|servico": {ini (casas prontas quando foi programado), q: {"2026-11-01": casas a executar na quinzena}}}
 const KEY = "estoque-obra";
-const vazio = () => ({ materiais: [], servicos: [], locais: [], modulos: [], fornecedores: [], movs: [], solics: [], pedidos: [], config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
+const vazio = () => ({ materiais: [], servicos: [], locais: [], modulos: [], fornecedores: [], movs: [], solics: [], pedidos: [], prog: {}, config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
 function migrar(d) {
   const v = vazio(); for (const k in v) d[k] ??= v[k];
   d.modulos.forEach(o => { o.feitas ??= {}; o.base ??= {}; });
@@ -231,13 +232,40 @@ function niveis(o, s) {
   const c = cadeia(s), f = c.map(x => feitas(o, x));
   return c.map((_, k) => Math.max(0, (k + 1 < c.length ? f[k + 1] : totCasas(o)) - f[k]));
 }
-const HORIZ = [[0, "Só frente liberada"], [1, "Frente + 1 serviço"], [2, "Frente + 2 serviços"], [3, "Frente + 3 serviços"], [99, "Tudo que falta"]];
-const rotNivel = k => k === 0 ? "frente liberada" : `daqui a ${k} serviço${k > 1 ? "s" : ""}`;
+
+// ---------- programação por quinzena (dia 1 a 15 e 16 ao fim do mês) ----------
+const quinz = d => d.slice(0, 8) + (+d.slice(8, 10) < 16 ? "01" : "16");
+const qIdx = q => { const [y, m, d] = q.split("-").map(Number); return y * 24 + (m - 1) * 2 + (d >= 16 ? 1 : 0); };
+const proxQ = q => { const [y, m] = q.split("-").map(Number); return q.endsWith("01") ? q.slice(0, 8) + "16" : m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`; };
+const fimQ = q => { const [y, m] = q.split("-").map(Number); return q.slice(0, 8) + (q.endsWith("01") ? "15" : new Date(y, m, 0).getDate()); };
+const fmtQ = q => `${fmt(q).slice(0, 5)} a ${fmt(fimQ(q)).slice(0, 5)}`;
+// faixa da quinzena contando da atual: 0 = agora, 1 = próxima... ; 99 = casas sem programação
+const faixa = q => q ? Math.min(97, Math.max(0, qIdx(q) - qIdx(quinz(hoje())))) : 99;
+// casas programadas que ainda faltam, por quinzena. As casas prontas desde a programação abatem
+// as quinzenas mais antigas primeiro; o que ficou pra trás passa pra quinzena atual (atrasado).
+function programado(o, s) {
+  const g = S.prog[o.id + "|" + s.id], r = {}, atual = quinz(hoje());
+  let atras = 0;
+  if (g) {
+    let feito = Math.max(0, feitas(o, s) - g.ini), pend = Math.max(0, totCasas(o) - feitas(o, s));
+    for (const q of Object.keys(g.q).sort()) {
+      let c = +g.q[q] || 0; const u = Math.min(feito, c); feito -= u;
+      c = Math.min(c - u, pend); pend -= c;
+      if (c <= 0) continue;
+      if (q < atual) atras += c;
+      r[q < atual ? atual : q] = (r[q < atual ? atual : q] || 0) + c;
+    }
+  }
+  return { partes: Object.entries(r).sort().map(([q, casas]) => ({ q, casas })), atras };
+}
+const HORIZ = [[0, "Quinzena atual"], [1, "Até 15 dias"], [2, "Até 30 dias"], [97, "Tudo programado"], [99, "Tudo que falta"]];
+const menos = (d, n) => new Date(Date.parse(d + "T12:00") - n * 864e5).toLocaleDateString("sv");
 
 // ---------- contas ----------
-// Demanda = casas que faltam × quantidade por casa, por módulo/serviço/nível.
-// O que tem (estoque + a chegar + solicitado) é reservado primeiro pra demanda mais próxima
-// (nível menor, depois ordem da sequência); o que sobra sem cobertura é o que falta comprar.
+// Demanda = casas que faltam × quantidade por casa, por módulo/serviço/quinzena programada
+// (casas sem programação ficam na faixa 99). O que tem (estoque + a chegar + solicitado) é
+// reservado primeiro pra quinzena mais próxima, depois pela ordem da sequência; o que sobra
+// sem cobertura é o que falta comprar.
 function calc() {
   const soma = (o, k, v) => o[k] = (o[k] || 0) + v;
   const saldo = {}, saiu = {}, receb = {}, pedidoSol = {}, aChegar = {}, solAberta = {}, falta = {}, esperado = {}, disp = {};
@@ -257,14 +285,16 @@ function calc() {
   }
   const dem = [];
   S.modulos.forEach((o, mi) => S.servicos.forEach((s, si) => {
-    const nv = niveis(o, s);
+    const pend = Math.max(0, totCasas(o) - feitas(o, s)), { partes } = programado(o, s);
+    const resto = pend - partes.reduce((t, p) => t + p.casas, 0);
+    if (resto > 0) partes.push({ q: "", casas: resto });
     for (const it of s.itens) {
-      const q = porCasa(it, o); if (!(q > 0)) continue;
-      nv.forEach((casas, nivel) => casas > 0 && dem.push({ mod: o.id, sv: s.id, mat: it.mat, nivel, casas, qtd: casas * q, ord: si, mi }));
-      soma(esperado, o.id + "|" + it.mat, Math.max(0, feitas(o, s) - (+o.base?.[s.id] || 0)) * q);
+      const qc = porCasa(it, o); if (!(qc > 0)) continue;
+      for (const p of partes) dem.push({ mod: o.id, sv: s.id, mat: it.mat, q: p.q, b: faixa(p.q), casas: p.casas, qtd: p.casas * qc, ord: si, mi });
+      soma(esperado, o.id + "|" + it.mat, Math.max(0, feitas(o, s) - (+o.base?.[s.id] || 0)) * qc);
     }
   }));
-  dem.sort((a, b) => a.nivel - b.nivel || a.ord - b.ord || a.mi - b.mi);
+  dem.sort((a, b) => a.b - b.b || a.ord - b.ord || a.mi - b.mi);
   for (const m of S.materiais) disp[m.id] = Math.max(0, saldo[m.id] || 0) + (aChegar[m.id] || 0) + (solAberta[m.id] || 0);
   for (const d of dem) {
     soma(falta, d.mat, d.qtd);
@@ -276,7 +306,7 @@ function calc() {
 // falta comprar por material até o horizonte escolhido
 function comprarAte(C, hz) {
   const r = {};
-  for (const d of C.dem) if (d.nivel <= hz && d.falta > 1e-6) r[d.mat] = (r[d.mat] || 0) + d.falta;
+  for (const d of C.dem) if (d.b <= hz && d.falta > 1e-6) r[d.mat] = (r[d.mat] || 0) + d.falta;
   return r;
 }
 // pedido: quanto falta chegar por item e o estado
@@ -335,16 +365,55 @@ function obra() {
   titulo("Obra", "casas prontas por serviço");
   if (!S.modulos.length) return `<div class="card"><p>Cadastre os módulos em Ajustes (quantas casas tipo 1 e tipo 2 cada um tem).</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
   if (!modu(aba.mod)) aba.mod = S.modulos[0].id;
-  const o = modu(aba.mod), tot = totCasas(o);
-  return `${S.modulos.length > 1 ? `<div class="seg">${S.modulos.map(x => `<button aria-pressed="${x.id === o.id}" onclick="aba.mod='${x.id}';render()">${esc(x.nome)}</button>`).join("")}</div>` : ""}
-  <p class="muted" style="margin-top:0">${esc(o.nome)}: ${tot} casas. Digite quantas já estão prontas em cada serviço.</p>
-  ${etapas().map(e => `<h2>${esc(e)}</h2><div class="card">${S.servicos.filter(s => (s.etapa || "Sem etapa") === e).map(s => {
-    const fr = niveis(o, s)[0], f = feitas(o, s);
+  const o = modu(aba.mod), tot = totCasas(o), atual = quinz(hoje());
+  // cada serviço entra na seção da quinzena mais próxima que tem programada
+  const secoes = [[`Rodando agora · ${fmtQ(atual)}`, []], [`Próximos 15 dias · ${fmtQ(proxQ(atual))}`, []], [`Próximos 30 dias · ${fmtQ(proxQ(proxQ(atual)))}`, []], ["Futuro", []]], inativos = [];
+  for (const s of S.servicos) {
+    if (feitas(o, s) >= tot) { inativos.push(s); continue; }
+    const pr = programado(o, s);
+    secoes[pr.partes.length ? Math.min(3, faixa(pr.partes[0].q)) : 3][1].push([s, pr]);
+  }
+  const linha = ([s, pr]) => {
+    const f = feitas(o, s), fr = niveis(o, s)[0], agora = pr.partes.find(p => p.q === atual)?.casas || 0;
+    const tags = [...pr.partes.slice(0, 2).map(p => `<span class="tag">${p.casas} casa${p.casas > 1 ? "s" : ""} em ${fmt(p.q).slice(0, 5)}</span>`),
+      pr.atras ? `<span class="tag er">${pr.atras} atrasada${pr.atras > 1 ? "s" : ""}</span>` : "",
+      agora > fr ? `<span class="tag wa">só ${fr} liberada${fr === 1 ? "" : "s"}</span>` : ""].join("");
     return `<div class="it" style="cursor:default"><span class="lb" style="cursor:pointer" onclick="ir('servico','${s.id}')"><u style="text-decoration-color:var(--tx3)">${esc(s.nome)}</u>
-      <small>${f >= tot ? '<span class="tag ok">concluído</span>' : fr ? `<span class="tag wa">${fr} liberada${fr > 1 ? "s" : ""}</span>` : "aguardando serviço anterior"} · ${s.itens.length} materiais</small></span>
-      <input class="cnt" type="number" min="0" max="${tot}" value="${f}" aria-label="Casas prontas" onchange="modu('${o.id}').feitas['${s.id}']=Math.min(${tot},Math.max(0,+this.value||0));save();render()"><span class="n muted">/${tot}</span></div>`;
-  }).join("")}</div>`).join("") || `<p class="empty">Nenhum serviço cadastrado.</p>`}
+      <small>${esc(s.etapa)}</small>${tags}</span>
+      <button class="icobtn n" aria-label="Programar" title="Programar" onclick="dlgProg('${s.id}')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+      <input class="cnt" style="width:64px" type="number" min="0" max="${tot}" value="${f}" aria-label="Casas prontas" onchange="modu('${o.id}').feitas['${s.id}']=Math.min(${tot},Math.max(0,+this.value||0));save();render()"><span class="n muted">/${tot}</span></div>`;
+  };
+  return `${S.modulos.length > 1 ? `<div class="seg">${S.modulos.map(x => `<button aria-pressed="${x.id === o.id}" onclick="aba.mod='${x.id}';render()">${esc(x.nome)}</button>`).join("")}</div>` : ""}
+  <p class="muted" style="margin-top:0">${esc(o.nome)}: ${tot} casas. O calendário programa em quantas casas cada serviço vai rodar em cada quinzena; o número é quantas já estão prontas.</p>
+  ${secoes.map(([t, ls]) => ls.length ? `<h2>${t}</h2><div class="card">${ls.map(linha).join("")}</div>` : "").join("") || (S.servicos.length ? "" : `<p class="empty">Nenhum serviço cadastrado.</p>`)}
+  ${inativos.length ? `<details class="card"><summary class="muted">Inativos (${inativos.length}): todas as casas prontas</summary>${inativos.map(s => `<div class="it" onclick="ir('servico','${s.id}')"><span class="lb">${esc(s.nome)}<small>${esc(s.etapa)}</small></span><span class="tag ok">concluído</span></div>`).join("")}</details>` : ""}
   <button class="btn sec" onclick="novoServico()">+ Serviço</button>`;
+}
+function dlgProg(sid) {
+  const o = modu(aba.mod), s = serv(sid), { partes, atras } = programado(o, s);
+  const pend = Math.max(0, totCasas(o) - feitas(o, s)), fr = niveis(o, s)[0];
+  const qs = []; for (let q = quinz(hoje()), i = 0; i < 8; i++, q = proxQ(q)) qs.push(q);
+  partes.forEach(p => qs.includes(p.q) || qs.push(p.q)); qs.sort();
+  D.innerHTML = `<form onsubmit="event.preventDefault();salvarProg('${sid}')"><h3>Programar · ${esc(s.nome)}</h3>
+    <p class="muted" style="margin-top:-6px">${esc(o.nome)} · faltam ${pend} casas · ${fr} liberada${fr === 1 ? "" : "s"} pelo serviço anterior</p>
+    ${atras ? `<p class="tag er" style="margin:0 0 8px">${atras} casa${atras > 1 ? "s" : ""} de quinzenas passadas já estão somadas na quinzena atual</p>` : ""}
+    ${qs.map((q, i) => `<div class="it" style="cursor:default"><span class="lb">${fmtQ(q)}${i ? "" : " <small>quinzena atual</small>"}</span>
+      <input class="cnt" type="number" min="0" max="${pend}" data-q="${q}" placeholder="casas" value="${partes.find(p => p.q === q)?.casas || ""}" oninput="progTot()"></div>`).join("")}
+    <p class="muted" id="progT"></p>
+    <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+  D.showModal(); progTot();
+}
+function progTot() {
+  const t = [...D.querySelectorAll("[data-q]")].reduce((a, i) => a + (+i.value || 0), 0), pend = +D.querySelector("[data-q]").max;
+  progT.textContent = `Programadas: ${t} de ${pend} casas` + (t > pend ? " (passou do que falta: o excesso é ignorado)" : "");
+}
+// salvar reinicia a contagem: as casas digitadas valem a partir do andamento de agora
+function salvarProg(sid) {
+  const o = modu(aba.mod), s = serv(sid), q = {};
+  D.querySelectorAll("[data-q]").forEach(i => { if (+i.value > 0) q[i.dataset.q] = +i.value; });
+  const k = o.id + "|" + s.id;
+  if (Object.keys(q).length) S.prog[k] = { ini: feitas(o, s), q }; else delete S.prog[k];
+  save(); D.close(); render();
 }
 function novoServico() {
   const n = prompt("Nome do serviço:"); if (!n?.trim()) return;
@@ -525,14 +594,20 @@ function compras(C) {
 // agrupada por etapa e serviço. Um material usado em dois serviços aparece nos dois.
 function indicacao(C) {
   const q = aba.fBusca.trim().toUpperCase();
-  const ds = C.dem.filter(d => d.falta > 1e-6 && d.nivel <= aba.hz && (!aba.fMod || d.mod === aba.fMod) && (!aba.fServ || d.sv === aba.fServ)
+  const ds = C.dem.filter(d => d.falta > 1e-6 && d.b <= aba.hz && (!aba.fMod || d.mod === aba.fMod) && (!aba.fServ || d.sv === aba.fServ)
     && (!aba.fEtapa || (serv(d.sv).etapa || "Sem etapa") === aba.fEtapa) && (!q || (nomeMat(d.mat) + " " + mat(d.mat)?.cod).toUpperCase().includes(q)));
-  const grupos = new Map(); // serviço -> material -> {falta, nivel}
+  const grupos = new Map(); // serviço -> material -> {falta, q (quinzena mais cedo; "" = sem programação)}
   for (const d of ds) {
     const g = grupos.get(d.sv) || new Map(); grupos.set(d.sv, g);
-    const x = g.get(d.mat) || { falta: 0, nivel: d.nivel }; g.set(d.mat, x);
-    x.falta += d.falta; x.nivel = Math.min(x.nivel, d.nivel);
+    const x = g.get(d.mat) || { falta: 0, q: d.q }; g.set(d.mat, x);
+    x.falta += d.falta; if (d.q && (!x.q || d.q < x.q)) x.q = d.q;
   }
+  // data limite pra comprar = início da quinzena − prazo do fornecedor
+  const quando = (x, f) => {
+    if (!x.q) return "sem programação";
+    const lim = menos(x.q, f?.prazo || 0);
+    return `precisa em ${fmt(x.q).slice(0, 5)} · ` + (lim <= hoje() ? '<span class="tag er">comprar já</span>' : `comprar até ${fmt(lim).slice(0, 5)}`);
+  };
   const svs = S.servicos.filter(s => grupos.has(s.id));
   const filtros = `<div class="filtros">
     <select onchange="aba.hz=+this.value;render()">${HORIZ.map(([v, t]) => `<option value="${v}" ${v === aba.hz ? "selected" : ""}>${t}</option>`).join("")}</select>
@@ -540,9 +615,9 @@ function indicacao(C) {
     <select onchange="aba.fEtapa=this.value;aba.fServ='';render()"><option value="">Todas as etapas</option>${etapas().map(e => `<option ${e === aba.fEtapa ? "selected" : ""}>${esc(e)}</option>`).join("")}</select>
     <select onchange="aba.fServ=this.value;render()"><option value="">Todos os serviços</option>${S.servicos.filter(s => !aba.fEtapa || (s.etapa || "Sem etapa") === aba.fEtapa).map(s => `<option value="${s.id}" ${s.id === aba.fServ ? "selected" : ""}>${esc(s.nome)}</option>`).join("")}</select>
     <input style="grid-column:1/-1" placeholder="Buscar material" value="${esc(aba.fBusca)}" onchange="aba.fBusca=this.value;render()"></div>`;
-  return filtros + `<p class="muted">O que já tem em estoque, a chegar e solicitado é reservado primeiro pros serviços mais próximos. Aqui só aparece o que fica descoberto.</p>
+  return filtros + `<p class="muted">O que já tem em estoque, a chegar e solicitado é reservado primeiro pra quinzena mais próxima. Aqui só aparece o que fica descoberto. Programe os serviços na aba Obra.</p>
     ${svs.map(s => `<div class="card"><h4>${esc(s.nome)}</h4><span class="sub" style="margin-bottom:4px">${esc(s.etapa)}</span>${[...grupos.get(s.id)].sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0]))).map(([mid, x]) => { const m = mat(mid), f = prazoDe(m);
-      return `<label class="it"><input type="checkbox" class="n" name="cp" value="${s.id}|${mid}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)} · ${rotNivel(x.nivel)}${f?.prazo ? ` · prazo ${f.prazo} dias` : ""}</small></span>
+      return `<label class="it"><input type="checkbox" class="n" name="cp" value="${s.id}|${mid}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)} · ${quando(x, f)}${f?.prazo ? ` · prazo ${f.prazo} dias` : ""}</small></span>
         <input class="cnt" type="number" step="any" min="0" id="cq_${s.id}_${mid}" value="${Math.ceil(x.falta * 100) / 100}"><span class="n muted" style="width:40px;font-size:12px">${esc(m.un)}</span></label>`; }).join("")}</div>`).join("") || `<p class="empty">Nada a comprar com esses filtros.</p>`}
     ${svs.length ? `<button class="btn" onclick="criarSolic()">Criar solicitação com os marcados</button>` : ""}`;
 }
@@ -895,21 +970,27 @@ btnDrive.onclick = () => { if (!S.config.driveClientId) { ir("ajustes"); return 
 // ---------- teste das contas: abrir index.html?teste=1 ----------
 if (location.search.includes("teste")) {
   S = vazio();
-  // 2 casas tipo 1; serviço B vem depois de A; A pronto em 1 casa, B em nenhuma
-  S.modulos = [{ id: "M1", nome: "M1", t1: 2, t2: 0, feitas: { A: 1 }, base: {} }];
+  // 4 casas tipo 1. A sem programação e sem casa pronta. B (vem depois de A) tem 1 pronta,
+  // programado 2 numa quinzena passada, 1 na atual e 1 na próxima.
+  const atual = quinz(hoje());
+  S.modulos = [{ id: "M1", nome: "M1", t1: 4, t2: 0, feitas: { B: 1 }, base: {} }];
   S.materiais = [{ id: "a", nome: "A", cod: "1-1", un: "un", fator: 1, locais: [] }];
   S.servicos = [{ id: "A", nome: "A", apos: "", itens: [{ mat: "a", q1: 10, q2: 0 }] }, { id: "B", nome: "B", apos: "A", itens: [{ mat: "a", q1: 5, q2: 0 }] }];
+  S.prog = { "M1|B": { ini: 0, q: { "2000-01-01": 2, [atual]: 1, [proxQ(atual)]: 1 } } };
   S.movs = [{ id: "1", tipo: "entrada", mat: "a", qtd: 12, ped: "P" }, { id: "2", tipo: "saida", mat: "a", qtd: 3, mod: "M1" }];
   S.pedidos = [{ id: "P", solic: "S", itens: [{ mat: "a", qtd: 20 }] }];
   S.solics = [{ id: "S", itens: [{ mat: "a", qtd: 21 }] }];
   const C = calc(), ok = (c, m) => { if (!c) throw new Error(m); };
   try {
+    ok(quinz("2026-10-21") === "2026-10-16" && proxQ("2026-12-16") === "2027-01-01" && fimQ("2026-02-16") === "2026-02-28", "quinzenas");
     ok(C.saldo.a === 9 && C.aChegar.a === 8 && C.solAberta.a === 1, "saldo 12−3, a chegar 20−12, solicitado 21−20");
-    ok(niveis(S.modulos[0], S.servicos[1]).join() === "1,1", "B: 1 casa liberada (A pronto), 1 esperando A");
-    ok(C.falta.a === 20, "falta usar: A 1×10 + B 2×5");
-    // tem 18 (9+8+1): A frente 10, B frente 5, sobra 3 pro B daqui a 1 serviço (precisa 5)
-    ok(!comprarAte(C, 0).a && comprarAte(C, 1).a === 2, "reserva pela ordem: frente coberta, falta 2 no próximo");
-    ok(C.esperado["M1|a"] === 10, "previsto já usado: 1 casa de A × 10");
+    ok(niveis(S.modulos[0], S.servicos[1]).join() === "0,4", "B: nenhuma liberada (A sem casa pronta)");
+    const pr = programado(S.modulos[0], S.servicos[1]);
+    ok(pr.atras === 1 && pr.partes.map(p => p.casas).join() === "2,1", "a pronta abate a quinzena passada; a que sobrou vai pra atual");
+    ok(C.falta.a === 55, "falta usar: A 4×10 + B 3×5");
+    // tem 18 (9+8+1): B agora 10, B próxima 5, sobra 3 pro A sem programação (precisa 40)
+    ok(!comprarAte(C, 0).a && !comprarAte(C, 1).a && comprarAte(C, 99).a === 37, "reserva pela quinzena: programado coberto, falta 37 no resto");
+    ok(C.esperado["M1|a"] === 5, "previsto já usado: 1 casa de B × 5");
     const { st } = estadoPedido(S.pedidos[0], C); ok(st === "parcial", "pedido parcial");
     document.body.innerHTML = "<h1 style='padding:20px'>Testes OK</h1>";
   } catch (e) { document.body.innerHTML = "<h1 style='padding:20px;color:red'>FALHOU: " + e.message + "</h1>"; }

@@ -10,7 +10,10 @@ Endereço: https://fabianofca26-creator.github.io/Controle_estoque/
 
 - **Ajustes**: módulos (quantas casas tipo 1 e tipo 2), fornecedores com prazo
   de entrega, locais de armazenamento, ponto de partida do controle.
-- **Obra**: serviços da sequência construtiva, agrupados por etapa, cada um com
+- **Obra**: programação por quinzena (1 a 15, 16 ao fim do mês): em quantas
+  casas cada serviço roda em cada quinzena, separado em rodando agora, próximos
+  15 e 30 dias, futuro e inativos. O que não foi feito passa pra quinzena atual
+  como atrasado. Cada serviço tem
   os materiais por casa (tipo 1 e 2) e o serviço que vem antes. O andamento é
   um número por serviço e módulo: quantas casas já estão prontas.
 - **Compras**: indicação do que comprar → solicitação (com o número do Sienge)
@@ -22,11 +25,12 @@ Endereço: https://fabianofca26-creator.github.io/Controle_estoque/
   material marca a data da conferência. A primeira conferência é o estoque
   inicial.
 
-Indicação de compra: casas que faltam × quantidade por casa, por serviço. Cada
-casa que falta tem uma distância da frente (0 = o serviço anterior já está
-pronto, 1 = falta 1 serviço antes, ...). O que tem em estoque, a chegar e
-solicitado é reservado primeiro pra demanda mais próxima; só o que fica
-descoberto aparece, filtrado por horizonte, módulo, etapa e serviço.
+Indicação de compra: casas programadas × quantidade por casa, por quinzena; a
+data limite é o início da quinzena menos o prazo do fornecedor. Casas sem
+programação só aparecem em "Tudo que falta". O que tem em estoque, a chegar e
+solicitado é reservado primeiro pra quinzena mais próxima; só o que fica
+descoberto aparece, filtrado por horizonte, módulo, etapa e serviço. A ordem
+dos serviços ("vem depois de") só serve pro aviso de casas não liberadas.
 
 ## Google Drive
 
