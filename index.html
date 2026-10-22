@@ -183,8 +183,11 @@ function lerPedido(paginas) {
 // </parser>
 
 // ---------- dados ----------
+// Comum a todas as obras: materiais, fornecedores, config. O resto (OBRA_DADOS) é da obra
+// atual e fica no topo de S; as outras obras ficam guardadas em S.obras[id] e trocam de lugar
+// no trocarObra — assim o resto do código só enxerga a obra atual.
 // material: {id, nome, cod ("797-2"), un, fator (quantidade por casa × fator = unidade do estoque),
-//            forn (fornecedor), locais:[id], conf (data da última conferência), apelidos:[chave do item no pedido]}
+//            forn (fornecedor), locais:[id de local de qualquer obra], confs:{obra: data da última conferência}, apelidos:[chave do item no pedido]}
 // servico: {id, nome, etapa, apos (serviço que vem antes; "" = começa livre), itens:[{mat, q1, q2}]} — a ordem do array é a sequência
 // modulo: {id, nome, t1, t2, feitas:{servico: casas prontas}, base:{servico: casas prontas antes do controle de estoque}}
 // mov: {id, data, tipo: entrada|saida|transf|ajuste, mat, qtd, mod?, serv?, obra?, ped?, obs?} — ajuste guarda a diferença com sinal
@@ -193,16 +196,35 @@ function lerPedido(paginas) {
 // fornecedor: {id, nome, prazo (dias)}
 // prog: {"modulo|servico": {ini (casas prontas quando foi programado), q: {"2026-11-01": casas a executar na quinzena}}}
 const KEY = "estoque-obra";
-const vazio = () => ({ materiais: [], servicos: [], locais: [], modulos: [], fornecedores: [], movs: [], solics: [], pedidos: [], prog: {}, config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const OBRA_DADOS = ["servicos", "locais", "modulos", "movs", "solics", "pedidos", "prog"];
+const dadosObra = () => ({ servicos: [], locais: [], modulos: [], movs: [], solics: [], pedidos: [], prog: {} });
+const vazio = () => ({ materiais: [], fornecedores: [], ...dadosObra(), obra: { id: uid(), nome: "Obra principal" }, obras: {}, config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
 function migrar(d) {
   const v = vazio(); for (const k in v) d[k] ??= v[k];
   d.modulos.forEach(o => { o.feitas ??= {}; o.base ??= {}; });
+  // conferência era uma data só; agora é por obra
+  d.materiais.forEach(m => { if (typeof m.conf === "string") (m.confs ??= {})[d.obra.id] = m.conf; delete m.conf; });
   return d;
 }
 let S = migrar(JSON.parse(localStorage.getItem(KEY) || "null") || vazio());
 function save() { S.meta.salvoEm = new Date().toISOString(); localStorage.setItem(KEY, JSON.stringify(S)); agendarSync(); }
 
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// ---------- obras ----------
+const listaObras = () => [S.obra, ...Object.entries(S.obras).map(([id, o]) => ({ id, nome: o.nome }))].sort(porNome);
+const dadosDe = id => id === S.obra.id ? S : S.obras[id]; // os dados de qualquer obra (a atual está no topo de S)
+function trocarObra(id) {
+  if (id === S.obra.id || !S.obras[id]) return;
+  const guardar = { nome: S.obra.nome }; OBRA_DADOS.forEach(k => guardar[k] = S[k]);
+  S.obras[S.obra.id] = guardar;
+  const o = S.obras[id]; delete S.obras[id];
+  S.obra = { id, nome: o.nome }; OBRA_DADOS.forEach(k => S[k] = o[k] ?? dadosObra()[k]);
+  migrar(S); contagem = {}; localConf = ""; aba.mod = ""; aba.fMod = ""; aba.fServ = "";
+  save(); ir("painel");
+}
+const confDe = m => m.confs?.[S.obra.id] || "";
+const localDaObra = id => S.locais.some(l => l.id === id);
+const locsDe = m => (m.locais || []).filter(localDaObra);
 const hoje = () => new Date().toLocaleDateString("sv");
 const fmt = d => d ? d.split("-").reverse().join("/") : "";
 const dias = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
@@ -337,7 +359,8 @@ function render() {
   if (tela === "materiais") listaMat(C);
   cabecalho();
 }
-function titulo(t, s) { document.getElementById("titulo").textContent = t; subtit.textContent = s || ""; }
+// a obra atual aparece no topo de toda tela, pra não lançar na obra errada
+function titulo(t, s) { document.getElementById("titulo").textContent = t; subtit.textContent = S.obra.nome + (s ? " · " + s : ""); }
 const xis = `<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
 
 // ---------- painel ----------
@@ -346,7 +369,7 @@ function painel(C) {
   if (!S.materiais.length) return `<div class="card"><p>Comece importando o backup inicial (<b>Ajustes → Backup → Importar</b>), ou cadastre módulos, locais e serviços em Ajustes e Obra.</p><button class="btn" onclick="ir('ajustes')">Ir para Ajustes</button></div>`;
   const comprar = Object.entries(comprarAte(C, aba.hz)).sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0])));
   const atrasados = S.pedidos.map(p => [p, estadoPedido(p, C)]).filter(([, e]) => e.atrasado);
-  const semConf = S.materiais.filter(m => (C.saldo[m.id] || 0) > 0).sort((a, b) => (a.conf || "").localeCompare(b.conf || "")).slice(0, 8);
+  const semConf = S.materiais.filter(m => (C.saldo[m.id] || 0) > 0).sort((a, b) => confDe(a).localeCompare(confDe(b))).slice(0, 8);
   const ub = S.meta.backup;
   return `<div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida()">Lançar saída</button></div>
   <div class="card"><div class="row"><div><h3 style="margin:0">Precisa comprar</h3><span class="sub">${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())}</span></div><span class="n big">${comprar.length}</span></div>
@@ -354,7 +377,7 @@ function painel(C) {
     ${comprar.length ? `<button class="btn sec" style="margin-top:8px" onclick="aba.compras='comprar';ir('compras')">Ver por serviço e gerar solicitação</button>` : ""}</div>
   ${atrasados.length ? `<div class="card"><h3>Pedidos atrasados</h3>${atrasados.map(([p]) => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span><span class="tag er">atrasado</span></div>`).join("")}</div>` : ""}
   <div class="card"><h3>Há mais tempo sem conferir</h3>
-    ${semConf.map(m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(locaisDe(m))}</small></span><span class="q">${m.conf ? "há " + dias(m.conf, hoje()) + " dias" : '<span class="tag wa">nunca</span>'}</span></div>`).join("") || `<p class="muted">Nenhum material com saldo.</p>`}
+    ${semConf.map(m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(locaisDe(m))}</small></span><span class="q">${confDe(m) ? "há " + dias(confDe(m), hoje()) + " dias" : '<span class="tag wa">nunca</span>'}</span></div>`).join("") || `<p class="muted">Nenhum material com saldo.</p>`}
     <button class="btn sec" style="margin-top:8px" onclick="ir('conferir')">Fazer conferência</button></div>
   <p class="muted" style="color:${ub && dias(ub, hoje()) < 15 ? "var(--tx3)" : "var(--wa-tx)"}">${ub ? "Último backup: " + fmt(ub) + " (há " + dias(ub, hoje()) + " dias)" : "Você nunca exportou backup."}</p>`;
 }
@@ -481,7 +504,7 @@ function listaMat(C = calc()) {
   if (aba.materiais === "lista") { lm.innerHTML = `<div class="card">${ms.map(linha).join("") || `<p class="empty">Nenhum material.</p>`}</div>`; return; }
   // onde está: só o que tem saldo, agrupado por local
   const comSaldo = ms.filter(m => (C.saldo[m.id] || 0) > 0);
-  const grupos = [...S.locais.map(l => [l.nome, comSaldo.filter(m => m.locais?.includes(l.id))]), ["Sem local", comSaldo.filter(m => !m.locais?.length)]];
+  const grupos = [...S.locais.map(l => [l.nome, comSaldo.filter(m => m.locais?.includes(l.id))]), ["Sem local", comSaldo.filter(m => !locsDe(m).length)]];
   lm.innerHTML = grupos.filter(([, ms]) => ms.length).map(([nome, ms]) => `<h2>${esc(nome)}</h2><div class="card">${ms.map(linha).join("")}</div>`).join("") || `<p class="empty">Nenhum material com saldo.</p>`;
 }
 
@@ -494,7 +517,7 @@ function material(C) {
   const cp = comprarAte(C, aba.hz)[m.id], f = prazoDe(m);
   const demMod = o => C.dem.filter(d => d.mat === m.id && d.mod === o.id).reduce((t, d) => t + d.qtd, 0);
   return `<div class="card"><span class="muted">Em estoque</span><div class="big">${fN(C.saldo[m.id])} <span style="font-size:16px">${esc(m.un)}</span></div>
-    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${m.conf ? "conferido em " + fmt(m.conf) + " (há " + dias(m.conf, hoje()) + " dias)" : "nunca conferido"}${f ? ` · ${esc(f.nome)}${f.prazo ? ", prazo " + f.prazo + " dias" : ""}` : ""}</p></div>
+    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${confDe(m) ? "conferido em " + fmt(confDe(m)) + " (há " + dias(confDe(m), hoje()) + " dias)" : "nunca conferido"}${f ? ` · ${esc(f.nome)}${f.prazo ? ", prazo " + f.prazo + " dias" : ""}` : ""}</p></div>
   <div class="kpis"><div><b>${fN(C.aChegar[m.id])}</b><span>a chegar (pedidos)</span></div><div><b>${fN(C.solAberta[m.id])}</b><span>solicitado sem pedido</span></div>
     <div><b>${fN(C.falta[m.id])}</b><span>falta usar na obra</span></div><div><b style="color:${cp ? "var(--wa-tx)" : "inherit"}">${fN(cp)}</b><span>comprar (${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())})</span></div></div>
   <div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida('${m.id}')">Saída</button><button class="btn sec" onclick="dlgMaterial('${m.id}')">Editar</button></div>
@@ -523,13 +546,13 @@ function dlgMaterial(id) {
 function salvarMaterial(id) {
   const m = id ? mat(id) : { id: uid(), apelidos: [] };
   Object.assign(m, { nome: mNome.value.trim(), cod: mCod.value.trim(), un: mUn.value.trim(), fator: +mFator.value || 1, forn: mForn.value,
-    locais: [...D.querySelectorAll("[name=mLoc]:checked")].map(i => i.value) });
+    locais: [...(m.locais || []).filter(l => !localDaObra(l)), ...[...D.querySelectorAll("[name=mLoc]:checked")].map(i => i.value)] }); // mantém os locais das outras obras
   if (!id) S.materiais.push(m);
   save(); D.close(); id ? render() : ir("material", m.id);
 }
 function excluirMaterial(id) {
-  if (S.movs.some(x => x.mat === id) || S.pedidos.some(p => p.itens.some(i => i.mat === id)) || S.solics.some(s => s.itens.some(i => i.mat === id)) || S.servicos.some(s => s.itens.some(i => i.mat === id)))
-    return alert("Esse material tem lançamentos, pedidos, solicitações ou está num serviço. Não dá pra excluir.");
+  if (listaObras().map(o => dadosDe(o.id)).some(d => d.movs.some(x => x.mat === id) || d.pedidos.some(p => p.itens.some(i => i.mat === id)) || d.solics.some(s => s.itens.some(i => i.mat === id)) || d.servicos.some(s => s.itens.some(i => i.mat === id))))
+    return alert("Esse material tem lançamentos, pedidos, solicitações ou está num serviço (nesta ou em outra obra). Não dá pra excluir.");
   if (!confirm("Excluir o material?")) return;
   S.materiais = S.materiais.filter(m => m.id !== id); save(); D.close(); voltar();
 }
@@ -545,7 +568,8 @@ function dlgSaida(id) {
     <div class="field"><label>Para onde</label><select id="sDest" onchange="sObraW.classList.toggle('hide',this.value!=='transf');sServW.classList.toggle('hide',this.value==='transf')">
       ${S.modulos.map(o => `<option value="${o.id}">${esc(o.nome)}</option>`).join("")}<option value="transf">Transferência para outra obra</option></select></div>
     <div class="field" id="sServW"><label>Serviço (opcional)</label><select id="sServ"></select></div>
-    <div class="field hide" id="sObraW"><label>Obra de destino</label><input id="sObra" list="dlObras"><datalist id="dlObras">${[...new Set(S.movs.map(x => x.obra).filter(Boolean))].map(o => `<option value="${esc(o)}">`).join("")}</datalist></div>
+    <div class="field hide" id="sObraW"><label>Obra de destino</label><input id="sObra" list="dlObras"><datalist id="dlObras">${[...new Set(listaObras().filter(o => o.id !== S.obra.id).map(o => o.nome).concat(S.movs.map(x => x.obra)).filter(Boolean))].map(o => `<option value="${esc(o)}">`).join("")}</datalist>
+      <span class="sub">Se for uma obra cadastrada no app, o material entra no estoque dela.</span></div>
     <div class="field"><label>Observação</label><input id="sObs"></div>
     <div class="row"><button type="button" class="btn sec" onclick="D.close()">Fechar</button><button class="btn sec" value="outra">Salvar e lançar outra</button><button class="btn" value="ok">Salvar</button></div></form>`;
   D.showModal(); saldoSaida();
@@ -566,7 +590,12 @@ function salvarSaida(modo) {
   if (!m) return alert("Escolha um material da lista.");
   const qtd = +sQtd.value; if (!(qtd > 0)) return alert("Informe a quantidade.");
   const mv = { id: uid(), data: sData.value, mat: m.id, qtd, obs: sObs.value.trim() };
-  if (sDest.value === "transf") { if (!sObra.value.trim()) return alert("Informe a obra de destino."); Object.assign(mv, { tipo: "transf", obra: sObra.value.trim() }); }
+  if (sDest.value === "transf") {
+    const nome = sObra.value.trim(); if (!nome) return alert("Informe a obra de destino.");
+    Object.assign(mv, { tipo: "transf", obra: nome });
+    const dest = listaObras().find(o => o.id !== S.obra.id && o.nome.toUpperCase() === nome.toUpperCase());
+    if (dest) dadosDe(dest.id).movs.push({ id: uid(), data: mv.data, tipo: "entrada", mat: m.id, qtd, obs: "transferência de " + S.obra.nome + (mv.obs ? " · " + mv.obs : "") });
+  }
   else Object.assign(mv, { tipo: "saida", mod: sDest.value, serv: sServ.value || undefined });
   S.movs.push(mv); save();
   if (modo === "outra") { sMat.value = ""; sQtd.value = ""; sObs.value = ""; saldoSaida(); sSaldo.textContent = "Lançado. Próximo material:"; sMat.focus(); render(); }
@@ -680,7 +709,12 @@ async function importarPdf(f) {
     p = lerPedido(pags);
   } catch (e) { return alert("Não consegui abrir o PDF: " + e.message); }
   if (!p.itens.length) return alert("Não encontrei itens nesse PDF. É um pedido do Sienge?");
-  if (S.pedidos.some(x => x.num === p.num) && !confirm(`O pedido ${p.num} já foi importado. Importar de novo?`)) return;
+  // o PDF traz o nome da obra: se for outra obra cadastrada, oferece trocar antes
+  const N = s => s.toUpperCase().replace(/\s*-\s*ETAPA\s*\d+\s*$/, "").trim(), po = N(p.obra);
+  const outra = po && listaObras().find(o => o.id !== S.obra.id && (po.includes(N(o.nome)) || N(o.nome).includes(po)));
+  const daAtual = po && (po.includes(N(S.obra.nome)) || N(S.obra.nome).includes(po));
+  if (outra && !daAtual && confirm(`Esse pedido é da obra ${p.obra}. Trocar para "${outra.nome}" antes de importar?`)) trocarObra(outra.id);
+  if (S.pedidos.some(x => x.num === p.num) && !confirm(`O pedido ${p.num} já foi importado nesta obra. Importar de novo?`)) return;
   // sugestão de material: equivalência já gravada; senão, o único material com o mesmo código de insumo
   p.itens.forEach(it => {
     it.chave = chaveItem(it);
@@ -797,9 +831,9 @@ function conferir(C) {
   titulo("Conferência", "conte o que tem em cada local");
   const locs = [...S.locais.map(l => [l.id, l.nome]), ["_", "Sem local"]].filter(([id]) => !localConf || id === localConf);
   const lista = locs.map(([lid, nome]) => {
-    const ms = S.materiais.filter(m => lid === "_" ? !m.locais?.length : m.locais?.includes(lid)).sort(porNome);
+    const ms = S.materiais.filter(m => lid === "_" ? !locsDe(m).length : m.locais?.includes(lid)).sort(porNome);
     return ms.length ? `<h2>${esc(nome)}</h2><div class="card">${ms.map(m => `<div class="it" style="cursor:default"><span class="lb">${esc(m.nome)}
-      <small>no app: ${fN(C.saldo[m.id])} ${esc(m.un)}${m.locais?.length > 1 ? " (somando " + esc(locaisDe(m)) + ")" : ""} · ${m.conf ? "conferido há " + dias(m.conf, hoje()) + " dias" : "nunca conferido"}</small></span>
+      <small>no app: ${fN(C.saldo[m.id])} ${esc(m.un)}${locsDe(m).length > 1 ? " (somando " + esc(locaisDe(m)) + ")" : ""} · ${confDe(m) ? "conferido há " + dias(confDe(m), hoje()) + " dias" : "nunca conferido"}</small></span>
       <input class="cnt" type="number" step="any" min="0" placeholder="contado" value="${contagem[m.id]?.[lid] ?? ""}" oninput="(contagem['${m.id}']??={})['${lid}']=this.value"></div>`).join("")}</div>` : "";
   }).join("");
   return `<div class="field"><select onchange="localConf=this.value;render()"><option value="">Todos os locais</option>${S.locais.map(l => `<option value="${l.id}" ${l.id === localConf ? "selected" : ""}>${esc(l.nome)}</option>`).join("")}<option value="_" ${localConf === "_" ? "selected" : ""}>Sem local</option></select></div>
@@ -811,14 +845,14 @@ function salvarConferencia() {
   const C = calc(), ajustados = [], faltam = [];
   for (const [id, cs] of Object.entries(contagem)) {
     const m = mat(id); if (!m) continue;
-    const locs = m.locais?.length ? m.locais : ["_"];
+    const locs = locsDe(m).length ? locsDe(m) : ["_"];
     if (!locs.some(l => cs[l] !== undefined && cs[l] !== "")) continue;
     const semContar = locs.filter(l => cs[l] === undefined || cs[l] === "");
     if (semContar.length) { faltam.push(`${m.nome}: falta contar em ${semContar.map(l => S.locais.find(x => x.id === l)?.nome || "sem local").join(", ")}`); continue; }
     const total = locs.reduce((t, l) => t + (+cs[l] || 0), 0), dif = total - (C.saldo[id] || 0);
     if (Math.abs(dif) > 1e-9) S.movs.push({ id: uid(), data: hoje(), tipo: "ajuste", mat: id, qtd: dif, obs: `contado ${fN(total)}, app dizia ${fN(C.saldo[id])}` });
-    if (m.locais?.length) m.locais = m.locais.filter(l => +cs[l] > 0);
-    m.conf = hoje(); ajustados.push(`${m.nome}: ${Math.abs(dif) > 1e-9 ? (dif > 0 ? "+" : "") + fN(dif) : "ok"}`);
+    if (locsDe(m).length) m.locais = m.locais.filter(l => !localDaObra(l) || +cs[l] > 0);
+    (m.confs ??= {})[S.obra.id] = hoje(); ajustados.push(`${m.nome}: ${Math.abs(dif) > 1e-9 ? (dif > 0 ? "+" : "") + fN(dif) : "ok"}`);
     delete contagem[id];
   }
   if (!ajustados.length && !faltam.length) return alert("Nenhuma contagem preenchida.");
@@ -830,7 +864,12 @@ function salvarConferencia() {
 function ajustes() {
   titulo("Ajustes");
   const linhaX = (val, onch, rm, extra = "") => `<div class="row" style="margin-bottom:8px"><input value="${esc(val)}" onchange="${onch}">${extra}<button class="icobtn n" aria-label="Remover" onclick="${rm}">${xis}</button></div>`;
-  return `<h2>Módulos</h2><div class="card"><p class="muted" style="margin-top:0">Nome · casas tipo 1 · casas tipo 2.</p>
+  const obras = listaObras();
+  return `<h2>Obra</h2><div class="card"><p class="muted" style="margin-top:0">Materiais e fornecedores são comuns a todas. Atividades, módulos, estoque, compras e programação são de cada obra.</p>
+    <div class="field"><select onchange="trocarObra(this.value)">${obras.map(o => `<option value="${o.id}" ${o.id === S.obra.id ? "selected" : ""}>${esc(o.nome)}</option>`).join("")}</select></div>
+    <div class="row" style="margin-bottom:8px"><button class="btn sec" onclick="novaObra()">+ Obra</button><button class="btn sec" onclick="renomearObra()">Renomear</button></div>
+    <div class="row">${obras.length > 1 ? `<button class="btn sec" onclick="copiarAtividades()">Copiar atividades de outra obra</button><button class="btn dan" onclick="excluirObra()">Excluir esta obra</button>` : ""}</div></div>
+  <h2>Módulos</h2><div class="card"><p class="muted" style="margin-top:0">Nome · casas tipo 1 · casas tipo 2.</p>
     ${S.modulos.map(o => linhaX(o.nome, `modu('${o.id}').nome=this.value.trim();save()`, `tirarModulo('${o.id}')`,
       `<input class="n" style="width:64px" type="number" min="0" title="Casas tipo 1" value="${o.t1}" onchange="modu('${o.id}').t1=+this.value||0;save()">
        <input class="n" style="width:64px" type="number" min="0" title="Casas tipo 2" value="${o.t2}" onchange="modu('${o.id}').t2=+this.value||0;save()">`)).join("")}
@@ -851,6 +890,36 @@ function ajustes() {
     <button class="btn" onclick="sincronizar(true)">${DRIVE.estado === "off" ? "Conectar e sincronizar" : "Sincronizar agora"}</button></div>
   <h2>Backup</h2><div class="card"><p class="muted" style="margin-top:0">${S.meta.backup ? "Último backup: " + fmt(S.meta.backup) : "Nunca fez backup."}</p>
     <div class="row"><button class="btn" onclick="exportar()">Exportar</button><button class="btn sec" onclick="fBk.click()">Importar</button></div></div>`;
+}
+function novaObra() {
+  const n = prompt("Nome da nova obra:"); if (!n?.trim()) return;
+  const id = uid(); S.obras[id] = { nome: n.trim(), ...dadosObra() };
+  const copiar = S.servicos.length && confirm(`Copiar as atividades (com os materiais por casa) de "${S.obra.nome}" pra nova obra?`);
+  const de = S.obra.id;
+  trocarObra(id);
+  if (copiar) { copiarDe(de); save(); render(); }
+}
+function renomearObra() { const n = prompt("Nome da obra:", S.obra.nome); if (n?.trim()) { S.obra.nome = n.trim(); save(); render(); } }
+// copia as atividades de outra obra; as que já existem aqui (mesmo nome) ficam como estão
+function copiarDe(origem) {
+  const tem = new Set(S.servicos.map(s => s.nome.toUpperCase())), ids = {};
+  const novas = dadosDe(origem).servicos.filter(s => !tem.has(s.nome.toUpperCase())).map(s => { const c = JSON.parse(JSON.stringify(s)); ids[s.id] = c.id = uid(); return c; });
+  novas.forEach(c => c.apos = ids[c.apos] || "");
+  S.servicos.push(...novas); return novas.length;
+}
+function copiarAtividades() {
+  const outras = listaObras().filter(o => o.id !== S.obra.id);
+  const r = outras.length === 1 ? "1" : prompt("Copiar de qual obra?\n" + outras.map((o, i) => `${i + 1} = ${o.nome}`).join("\n"));
+  const o = outras[+r - 1]; if (!o) return;
+  const n = copiarDe(o.id); save(); render();
+  alert(n ? `${n} atividade(s) copiada(s) de ${o.nome}.` : "Todas as atividades de lá já existem aqui.");
+}
+function excluirObra() {
+  if (prompt(`Isso apaga atividades, módulos, estoque, compras e programação de "${S.obra.nome}". Pra confirmar, digite o nome da obra:`)?.trim().toUpperCase() !== S.obra.nome.toUpperCase()) return;
+  const apagar = S.obra.id, prox = listaObras().find(o => o.id !== apagar).id;
+  trocarObra(prox); delete S.obras[apagar];
+  S.materiais.forEach(m => { delete m.confs?.[apagar]; });
+  save(); render();
 }
 function addModulo() { const n = prompt("Nome do módulo (ex: MÓDULO 1):"); if (n?.trim()) { S.modulos.push({ id: uid(), nome: n.trim(), t1: 0, t2: 0, feitas: {}, base: {} }); save(); render(); } }
 function tirarModulo(id) {
