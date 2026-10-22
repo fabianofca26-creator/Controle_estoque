@@ -373,7 +373,7 @@ function painel(C) {
   const ub = S.meta.backup;
   return `<div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida()">Lançar saída</button></div>
   <div class="card"><div class="row"><div><h3 style="margin:0">Precisa comprar</h3><span class="sub">${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())}</span></div><span class="n big">${comprar.length}</span></div>
-    ${comprar.slice(0, 8).map(([id, q]) => `<div class="it" onclick="ir('material','${id}')"><span class="lb">${esc(nomeMat(id))}${prazoDe(mat(id))?.prazo ? `<small>prazo ${prazoDe(mat(id)).prazo} dias</small>` : ""}</span><span class="q">${fN(q)} ${esc(unMat(id))}</span></div>`).join("") || `<p class="muted">Nada por enquanto.</p>`}
+    ${comprar.slice(0, 8).map(([id, q]) => `<div class="it" onclick="ir('material','${id}')"><span class="lb">${esc(nomeMat(id))}${prazoDe(mat(id))?.prazo ? `<small>prazo ${prazoDe(mat(id)).prazo} dias</small>` : ""}</span><span class="q">${fN(Math.ceil(q - 1e-9))} ${esc(unMat(id))}</span></div>`).join("") || `<p class="muted">Nada por enquanto.</p>`}
     ${comprar.length ? `<button class="btn sec" style="margin-top:8px" onclick="aba.compras='comprar';ir('compras')">Ver por serviço e gerar solicitação</button>` : ""}</div>
   ${atrasados.length ? `<div class="card"><h3>Pedidos atrasados</h3>${atrasados.map(([p]) => `<div class="it" onclick="ir('pedido','${p.id}')"><span class="lb">Pedido ${esc(p.num)}<small>${esc(p.fornecedor)}</small></span><span class="tag er">atrasado</span></div>`).join("")}</div>` : ""}
   <div class="card"><h3>Há mais tempo sem conferir</h3>
@@ -638,6 +638,9 @@ function indicacao(C) {
     return `precisa em ${fmt(x.q).slice(0, 5)} · ` + (lim <= hoje() ? '<span class="tag er">comprar já</span>' : `comprar até ${fmt(lim).slice(0, 5)}`);
   };
   const svs = S.servicos.filter(s => grupos.has(s.id));
+  // o que o estoque/a chegar/solicitado já cobre desse material nesse serviço, dentro do horizonte
+  const cob = {};
+  for (const d of C.dem) if (d.b <= aba.hz && (!aba.fMod || d.mod === aba.fMod)) cob[d.sv + "|" + d.mat] = (cob[d.sv + "|" + d.mat] || 0) + d.qtd - d.falta;
   const filtros = `<div class="filtros">
     <select onchange="aba.hz=+this.value;render()">${HORIZ.map(([v, t]) => `<option value="${v}" ${v === aba.hz ? "selected" : ""}>${t}</option>`).join("")}</select>
     <select onchange="aba.fMod=this.value;render()"><option value="">Todos os módulos</option>${S.modulos.map(o => `<option value="${o.id}" ${o.id === aba.fMod ? "selected" : ""}>${esc(o.nome)}</option>`).join("")}</select>
@@ -645,10 +648,30 @@ function indicacao(C) {
     <select onchange="aba.fServ=this.value;render()"><option value="">Todos os serviços</option>${S.servicos.filter(s => !aba.fEtapa || (s.etapa || "Sem etapa") === aba.fEtapa).map(s => `<option value="${s.id}" ${s.id === aba.fServ ? "selected" : ""}>${esc(s.nome)}</option>`).join("")}</select>
     <input style="grid-column:1/-1" placeholder="Buscar material" value="${esc(aba.fBusca)}" onchange="aba.fBusca=this.value;render()"></div>`;
   return filtros + `<p class="muted">O que já tem em estoque, a chegar e solicitado é reservado primeiro pra quinzena mais próxima. Aqui só aparece o que fica descoberto. Programe os serviços na aba Obra.</p>
-    ${svs.map(s => `<div class="card"><h4>${esc(s.nome)}</h4><span class="sub" style="margin-bottom:4px">${esc(s.etapa)}</span>${[...grupos.get(s.id)].sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0]))).map(([mid, x]) => { const m = mat(mid), f = prazoDe(m);
-      return `<label class="it"><input type="checkbox" class="n" name="cp" value="${s.id}|${mid}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)} · ${quando(x, f)}${f?.prazo ? ` · prazo ${f.prazo} dias` : ""}</small></span>
-        <input class="cnt" type="number" step="any" min="0" id="cq_${s.id}_${mid}" value="${Math.ceil(x.falta * 100) / 100}"><span class="n muted" style="width:40px;font-size:12px">${esc(m.un)}</span></label>`; }).join("")}</div>`).join("") || `<p class="empty">Nada a comprar com esses filtros.</p>`}
+    ${svs.map(s => { const { h1, h2 } = casasHz(s);
+      return `<div class="card"><h4>${esc(s.nome)}</h4><span class="sub" style="margin-bottom:6px">${esc(s.etapa)}</span>
+      <div class="row" style="margin-bottom:4px"><label style="margin:0">Pedir para casas tipo 1</label><input class="cnt n" type="number" min="0" step="1" id="h1_${s.id}" value="${h1}" oninput="recalcSv('${s.id}')">
+        <label style="margin:0">tipo 2</label><input class="cnt n" type="number" min="0" step="1" id="h2_${s.id}" value="${h2}" oninput="recalcSv('${s.id}')"></div>
+      ${[...grupos.get(s.id)].sort((a, b) => nomeMat(a[0]).localeCompare(nomeMat(b[0]))).map(([mid, x]) => { const m = mat(mid), f = prazoDe(m), it = s.itens.find(i => i.mat === mid), c = cob[s.id + "|" + mid] || 0;
+      return `<label class="it"><input type="checkbox" class="n" name="cp" value="${s.id}|${mid}" checked><span class="lb">${esc(m.nome)}<small>${esc(m.cod)} · ${fN(it.q1)} / ${fN(it.q2)} por casa${c > 1e-6 ? ` · já coberto ${fN(c)}` : ""} · ${quando(x, f)}${f?.prazo ? ` · prazo ${f.prazo} dias` : ""}</small></span>
+        <input class="cnt" type="number" step="any" min="0" id="cq_${s.id}_${mid}" data-cob="${c}" value="${qtdPedir(it, h1, h2, c)}"><span class="n muted" style="width:40px;font-size:12px">${esc(m.un)}</span></label>`; }).join("")}</div>`; }).join("") || `<p class="empty">Nada a comprar com esses filtros.</p>`}
     ${svs.length ? `<button class="btn" onclick="criarSolic()">Criar solicitação com os marcados</button>` : ""}`;
+}
+// casas do horizonte, separadas por tipo pela proporção de cada módulo (arredondado pra casa inteira)
+function casasHz(s) {
+  let h1 = 0, h2 = 0;
+  for (const o of S.modulos) {
+    const tot = totCasas(o); if (!tot || (aba.fMod && o.id !== aba.fMod)) continue;
+    const h = aba.hz >= 99 ? Math.max(0, tot - feitas(o, s)) : programado(o, s).partes.filter(p => faixa(p.q) <= aba.hz).reduce((t, p) => t + p.casas, 0);
+    const a = Math.round(h * (+o.t1 || 0) / tot); h1 += a; h2 += h - a;
+  }
+  return { h1, h2 };
+}
+// quanto pedir = casas × quantidade por casa de cada tipo − o que já está coberto, arredondado pra cima
+const qtdPedir = (it, h1, h2, cob) => Math.max(0, Math.ceil(((+h1 || 0) * (+it.q1 || 0) + (+h2 || 0) * (+it.q2 || 0)) * (+mat(it.mat)?.fator || 1) - cob - 1e-9));
+function recalcSv(sid) {
+  const s = serv(sid), h1 = document.getElementById("h1_" + sid).value, h2 = document.getElementById("h2_" + sid).value;
+  s.itens.forEach(it => { const i = document.getElementById(`cq_${sid}_${it.mat}`); if (i) i.value = qtdPedir(it, h1, h2, +i.dataset.cob); });
 }
 function criarSolic(vazia) {
   const itens = [];
