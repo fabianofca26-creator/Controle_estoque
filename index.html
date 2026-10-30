@@ -111,12 +111,12 @@ nav button[aria-current=true]{color:var(--ac);font-weight:600}
 </div>
 
 <nav id="nav">
-  <button data-t="painel" onclick="ir('painel')"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Painel</button>
-  <button data-t="obra" onclick="ir('obra')"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>Obra</button>
-  <button data-t="materiais" onclick="ir('materiais')"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Materiais</button>
-  <button data-t="compras" onclick="ir('compras')"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>Compras</button>
-  <button data-t="conferir" onclick="ir('conferir')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Conferir</button>
-  <button data-t="ajustes" onclick="ir('ajustes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ajustes</button>
+  <button data-t="painel" onclick="navAba('painel')"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v10h14V10"/></svg>Painel</button>
+  <button data-t="obra" onclick="navAba('obra')"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></svg>Obra</button>
+  <button data-t="materiais" onclick="navAba('materiais')"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10"/></svg>Materiais</button>
+  <button data-t="compras" onclick="navAba('compras')"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8"/></svg>Compras</button>
+  <button data-t="conferir" onclick="navAba('conferir')"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Conferir</button>
+  <button data-t="ajustes" onclick="navAba('ajustes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Ajustes</button>
 </nav>
 
 <dialog id="D"></dialog>
@@ -219,7 +219,7 @@ function trocarObra(id) {
   S.obras[S.obra.id] = guardar;
   const o = S.obras[id]; delete S.obras[id];
   S.obra = { id, nome: o.nome }; OBRA_DADOS.forEach(k => S[k] = o[k] ?? dadosObra()[k]);
-  migrar(S); contagem = {}; localConf = ""; aba.mod = ""; aba.fMod = ""; aba.fServ = "";
+  migrar(S); contagem = {}; localConf = ""; aba.mod = ""; aba.fMod = ""; aba.fServ = ""; estados = {};
   save(); ir("painel");
 }
 const confDe = m => m.confs?.[S.obra.id] || "";
@@ -348,6 +348,16 @@ const ABAS = ["painel", "obra", "materiais", "compras", "conferir", "ajustes"];
 function ir(t, id) {
   if (ABAS.includes(t)) pilha = []; else pilha.push([tela, sel]);
   tela = t; sel = id ?? null; render(); scrollTo(0, 0);
+}
+// menu de baixo: cada aba lembra onde parou (tela aberta, caminho de volta e rolagem).
+// Tocar na aba em que já está volta pro início dela.
+let estados = {};
+function navAba(t) {
+  const de = pilha[0]?.[0] || tela;
+  if (de === t) return ir(t);
+  estados[de] = { tela, sel, pilha, y: scrollY };
+  const e = estados[t]; if (!e) return ir(t);
+  ({ tela, sel, pilha } = e); render(); scrollTo(0, e.y);
 }
 function voltar() { [tela, sel] = pilha.pop() || ["painel", null]; render(); }
 function render() {
@@ -973,7 +983,7 @@ function exportar() {
 }
 function importarBackup(f) {
   if (!f || !confirm("Substituir todos os dados pelo backup?")) return;
-  f.text().then(t => { const d = JSON.parse(t); if (!Array.isArray(d.materiais)) throw 0; S = migrar(d); save(); ir("painel"); })
+  f.text().then(t => { const d = JSON.parse(t); if (!Array.isArray(d.materiais)) throw 0; S = migrar(d); estados = {}; save(); ir("painel"); })
     .catch(() => alert("Arquivo inválido."));
 }
 
