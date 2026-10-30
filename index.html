@@ -240,6 +240,9 @@ const rotuloMat = m => (m.cod ? m.cod + " · " : "") + m.nome;
 const porNome = (a, b) => a.nome.localeCompare(b.nome);
 const etapas = () => [...new Set(S.servicos.map(s => s.etapa || "Sem etapa"))];
 const prazoDe = m => S.fornecedores.find(f => f.id === m?.forn);
+// fornecedor: {id, nome, cat (categoria de insumo), prazo} — o prazo é do par fornecedor + categoria
+const rotuloForn = f => (f.cat ? f.cat + " · " : "") + f.nome;
+const porForn = (a, b) => rotuloForn(a).localeCompare(rotuloForn(b));
 
 // ---------- andamento ----------
 const totCasas = o => (+o.t1 || 0) + (+o.t2 || 0);
@@ -527,7 +530,7 @@ function material(C) {
   const cp = comprarAte(C, aba.hz)[m.id], f = prazoDe(m);
   const demMod = o => C.dem.filter(d => d.mat === m.id && d.mod === o.id).reduce((t, d) => t + d.qtd, 0);
   return `<div class="card"><span class="muted">Em estoque</span><div class="big">${fN(C.saldo[m.id])} <span style="font-size:16px">${esc(m.un)}</span></div>
-    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${confDe(m) ? "conferido em " + fmt(confDe(m)) + " (há " + dias(confDe(m), hoje()) + " dias)" : "nunca conferido"}${f ? ` · ${esc(f.nome)}${f.prazo ? ", prazo " + f.prazo + " dias" : ""}` : ""}</p></div>
+    <p class="muted" style="margin:6px 0 0">${esc(locaisDe(m))} · ${confDe(m) ? "conferido em " + fmt(confDe(m)) + " (há " + dias(confDe(m), hoje()) + " dias)" : "nunca conferido"}${f ? ` · ${esc(rotuloForn(f))}${f.prazo ? ", prazo " + f.prazo + " dias" : ""}` : ""}</p></div>
   <div class="kpis"><div><b>${fN(C.aChegar[m.id])}</b><span>a chegar (pedidos)</span></div><div><b>${fN(C.solAberta[m.id])}</b><span>solicitado sem pedido</span></div>
     <div><b>${fN(C.falta[m.id])}</b><span>falta usar na obra</span></div><div><b style="color:${cp ? "var(--wa-tx)" : "inherit"}">${fN(cp)}</b><span>comprar (${esc(HORIZ.find(h => h[0] === aba.hz)[1].toLowerCase())})</span></div></div>
   <div class="row" style="margin-bottom:12px"><button class="btn" onclick="dlgSaida('${m.id}')">Saída</button><button class="btn sec" onclick="dlgMaterial('${m.id}')">Editar</button></div>
@@ -546,7 +549,7 @@ function dlgMaterial(id) {
     <div class="field"><label>Nome</label><input id="mNome" required value="${esc(m.nome)}"></div>
     <div class="row field"><div><label>Código Sienge</label><input id="mCod" value="${esc(m.cod)}"></div><div><label>Unidade do estoque</label><input id="mUn" value="${esc(m.un)}"></div></div>
     <div class="row field"><div><label>Fator (por casa → estoque)</label><input id="mFator" type="number" step="any" min="0" value="${m.fator || 1}"></div>
-      <div><label>Fornecedor</label><select id="mForn"><option value="">—</option>${S.fornecedores.slice().sort(porNome).map(f => `<option value="${f.id}" ${f.id === m.forn ? "selected" : ""}>${esc(f.nome)}</option>`).join("")}</select></div></div>
+      <div><label>Categoria · fornecedor</label><select id="mForn"><option value="">—</option>${S.fornecedores.slice().sort(porForn).map(f => `<option value="${f.id}" ${f.id === m.forn ? "selected" : ""}>${esc(rotuloForn(f))}${f.prazo ? ` (${f.prazo} dias)` : ""}</option>`).join("")}</select></div></div>
     <p class="muted" style="margin-top:-6px">Fator: use quando a quantidade por casa está numa unidade e o estoque em outra (ex.: barras × kg por barra). Normalmente é 1.</p>
     <div class="field"><label>Onde está guardado</label>${S.locais.map(l => `<label class="row" style="color:var(--tx);font-size:15px;margin:6px 0"><input type="checkbox" class="n" name="mLoc" value="${l.id}" ${m.locais?.includes(l.id) ? "checked" : ""}><span>${esc(l.nome)}</span></label>`).join("") || `<p class="muted">Cadastre os locais em Ajustes.</p>`}</div>
     <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div>
@@ -785,9 +788,12 @@ function dlgPedido() {
 function salvarPedido() {
   const p = novoPed;
   if (p.itens.some(it => !it.mat)) return alert("Escolha o material de todos os itens (ou \"Material novo\").");
-  // fornecedor do pedido vira cadastro (pra guardar o prazo) e fica ligado aos materiais que ainda não têm
-  let forn = S.fornecedores.find(f => f.nome.toUpperCase() === p.fornecedor.toUpperCase());
-  if (!forn && p.fornecedor) S.fornecedores.push(forn = { id: uid(), nome: p.fornecedor, prazo: 0 });
+  // fornecedor do pedido ("VELUTEX INDUSTRIA E COMERCIO...") contra o cadastro ("VELUTEX"): se só tem
+  // uma categoria dele, liga aos materiais que ainda não têm; se tem várias, você escolhe no material;
+  // se não tem nenhuma, vira cadastro novo (pra guardar o prazo)
+  const pf = p.fornecedor.toUpperCase(), dele = S.fornecedores.filter(f => f.nome && (pf.includes(f.nome.toUpperCase()) || f.nome.toUpperCase().includes(pf)));
+  let forn = dele.length === 1 ? dele[0] : null;
+  if (!dele.length && p.fornecedor) S.fornecedores.push(forn = { id: uid(), nome: p.fornecedor, cat: "", prazo: 0 });
   for (const it of p.itens) {
     if (it.mat === "novo") {
       const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un, fator: 1, locais: [], apelidos: [] };
@@ -909,9 +915,10 @@ function ajustes() {
     <button class="btn sec" onclick="addModulo()">+ Módulo</button></div>
   <div class="card"><h4>Início do controle de estoque</h4><p class="muted" style="margin-top:0">Depois de lançar o andamento atual na aba Obra, toque aqui: as casas prontas até hoje ficam marcadas como "antes do controle" e não entram na comparação entre o previsto e o que saiu.</p>
     <button class="btn sec" onclick="pontoPartida()">Marcar andamento atual como ponto de partida</button></div>
-  <h2>Fornecedores</h2><div class="card"><p class="muted" style="margin-top:0">Nome · prazo de entrega em dias. Quem vem num pedido importado entra aqui sozinho.</p>
-    ${S.fornecedores.slice().sort(porNome).map(f => linhaX(f.nome, `S.fornecedores.find(x=>x.id==='${f.id}').nome=this.value.trim();save()`, `tirarForn('${f.id}')`,
-      `<input class="n" style="width:70px" type="number" min="0" title="Prazo em dias" value="${f.prazo || ""}" placeholder="dias" onchange="S.fornecedores.find(x=>x.id==='${f.id}').prazo=+this.value||0;save()">`)).join("")}
+  <h2>Fornecedores e prazos</h2><div class="card"><p class="muted" style="margin-top:0">Categoria de insumo · prazo em dias · fornecedor. O mesmo fornecedor pode aparecer em mais de uma categoria com prazos diferentes. Fornecedor novo de pedido importado entra aqui sozinho.</p>
+    ${S.fornecedores.slice().sort(porForn).map(f => `<div class="map">${linhaX(f.cat || "", `S.fornecedores.find(x=>x.id==='${f.id}').cat=this.value.trim();save()`, `tirarForn('${f.id}')`,
+      `<input class="n" style="width:70px" type="number" min="0" title="Prazo em dias" value="${f.prazo || ""}" placeholder="dias" onchange="S.fornecedores.find(x=>x.id==='${f.id}').prazo=+this.value||0;save()">`).replace("<input ", '<input placeholder="Categoria" ')}
+      <input value="${esc(f.nome)}" placeholder="Fornecedor" onchange="S.fornecedores.find(x=>x.id==='${f.id}').nome=this.value.trim();save()"></div>`).join("")}
     <button class="btn sec" onclick="addForn()">+ Fornecedor</button></div>
   <h2>Locais de armazenamento</h2><div class="card">
     ${S.locais.map(l => linhaX(l.nome, `S.locais.find(x=>x.id==='${l.id}').nome=this.value.trim();save()`, `tirarLocal('${l.id}')`)).join("")}
@@ -963,7 +970,11 @@ function pontoPartida() {
   if (!confirm("Marcar as casas prontas de hoje como \"antes do controle\" em todos os módulos e serviços?")) return;
   S.modulos.forEach(o => o.base = { ...o.feitas }); save(); alert("Pronto.");
 }
-function addForn() { const n = prompt("Nome do fornecedor:"); if (n?.trim()) { S.fornecedores.push({ id: uid(), nome: n.trim(), prazo: 0 }); save(); render(); } }
+function addForn() {
+  const n = prompt("Nome do fornecedor:"); if (!n?.trim()) return;
+  const c = prompt("Categoria de insumo (ex: Tintas):") ?? "";
+  S.fornecedores.push({ id: uid(), nome: n.trim(), cat: c.trim(), prazo: 0 }); save(); render();
+}
 function tirarForn(id) {
   if (!confirm("Remover o fornecedor?")) return;
   S.fornecedores = S.fornecedores.filter(f => f.id !== id); S.materiais.forEach(m => { if (m.forn === id) m.forn = ""; }); save(); render();
