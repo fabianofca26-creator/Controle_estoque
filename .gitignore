@@ -1,6 +1,7 @@
 # pedidos e planilhas reais não vão pro repositório público
 *.pdf
 *.xlsx
+*.csv
 *.json
 !manifest.webmanifest
 node_modules/

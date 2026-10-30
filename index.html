@@ -122,6 +122,7 @@ nav button[aria-current=true]{color:var(--ac);font-weight:600}
 <dialog id="D"></dialog>
 <input type="file" id="fPdf" accept="application/pdf" class="hide" onchange="importarPdf(this.files[0]); this.value=''">
 <input type="file" id="fBk" accept=".json" class="hide" onchange="importarBackup(this.files[0]); this.value=''">
+<input type="file" id="fCsv" accept=".csv,text/csv" class="hide" onchange="importarInsumos(this.files[0]); this.value=''">
 
 <script>
 // ---------- leitura do pedido (PDF do Sienge) ----------
@@ -180,6 +181,24 @@ function lerPedido(paginas) {
   });
   return p;
 }
+// Relatório "cadastro de insumos" do Sienge (CSV com ;): linhas de grupo ("02.014 - Pintura") na
+// 1ª coluna e, embaixo, os insumos (;código;descrição;unidade;...). Vira a base de consulta.
+function lerInsumosCsv(txt) {
+  const linhas = []; let campo = "", lin = [], aspas = false;
+  for (let i = 0; i < txt.length; i++) {
+    const c = txt[i];
+    if (aspas) { if (c === '"') { if (txt[i + 1] === '"') { campo += '"'; i++; } else aspas = false; } else campo += c; }
+    else if (c === '"') aspas = true; else if (c === ";") { lin.push(campo); campo = ""; }
+    else if (c === "\n") { lin.push(campo.replace(/\r$/, "")); linhas.push(lin); lin = []; campo = ""; } else campo += c;
+  }
+  if (campo || lin.length) { lin.push(campo); linhas.push(lin); }
+  const out = []; let grupo = "";
+  for (const l of linhas.slice(1)) {
+    if (l[0]?.trim()) { grupo = l[0].trim().replace(/^[\d.]+\s*-\s*/, ""); continue; }
+    if (l[1]?.trim() && l[2]?.trim()) out.push({ cod: l[1].trim(), nome: l[2].replace(/\s+/g, " ").trim(), un: (l[3] || "").trim(), grupo });
+  }
+  return out;
+}
 // </parser>
 
 // ---------- dados ----------
@@ -199,7 +218,8 @@ const KEY = "estoque-obra";
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const OBRA_DADOS = ["servicos", "locais", "modulos", "movs", "solics", "pedidos", "prog"];
 const dadosObra = () => ({ servicos: [], locais: [], modulos: [], movs: [], solics: [], pedidos: [], prog: {} });
-const vazio = () => ({ materiais: [], fornecedores: [], ...dadosObra(), obra: { id: uid(), nome: "Obra principal" }, obras: {}, config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
+// insumos: [{cod, nome, un, grupo}] — base de consulta do Sienge (comum a todas as obras); não é estoque
+const vazio = () => ({ materiais: [], fornecedores: [], insumos: [], ...dadosObra(), obra: { id: uid(), nome: "Obra principal" }, obras: {}, config: { driveClientId: "" }, meta: { salvoEm: null, backup: null } });
 function migrar(d) {
   const v = vazio(); for (const k in v) d[k] ??= v[k];
   d.modulos.forEach(o => { o.feitas ??= {}; o.base ??= {}; });
@@ -240,6 +260,9 @@ const rotuloMat = m => (m.cod ? m.cod + " · " : "") + m.nome;
 const porNome = (a, b) => a.nome.localeCompare(b.nome);
 const etapas = () => [...new Set(S.servicos.map(s => s.etapa || "Sem etapa"))];
 const prazoDe = m => S.fornecedores.find(f => f.id === m?.forn);
+// o material puxa da base do Sienge pelo código do insumo (sem o detalhe: "797-2" → 797)
+const insumo = cod => cod ? S.insumos.find(i => i.cod === String(cod).split("-")[0].trim()) : null;
+const grupoDe = m => insumo(m.cod)?.grupo || "";
 // fornecedor: {id, nome, cat (categoria de insumo), prazo} — o prazo é do par fornecedor + categoria
 const rotuloForn = f => (f.cat ? f.cat + " · " : "") + f.nome;
 const porForn = (a, b) => rotuloForn(a).localeCompare(rotuloForn(b));
@@ -346,7 +369,7 @@ const tagPedido = e => `<span class="tag ${e.st === "recebido" ? "ok" : e.st ===
 
 // ---------- navegação ----------
 let tela = "painel", sel = null, pilha = [];
-let aba = { materiais: "lista", compras: "comprar", hz: 1, mod: "", fMod: "", fEtapa: "", fServ: "", fBusca: "" }, busca = "", etapaSel = "", localConf = "";
+let aba = { materiais: "lista", compras: "comprar", hz: 1, mod: "", fMod: "", fEtapa: "", fServ: "", fBusca: "" }, busca = "", etapaSel = "", grupoSel = "", localConf = "";
 const ABAS = ["painel", "obra", "materiais", "compras", "conferir", "ajustes"];
 function ir(t, id) {
   if (ABAS.includes(t)) pilha = []; else pilha.push([tela, sel]);
@@ -505,14 +528,15 @@ function materiais() {
   return `<div class="seg noprint"><button aria-pressed="${aba.materiais === "lista"}" onclick="aba.materiais='lista';render()">Lista</button><button aria-pressed="${aba.materiais === "local"}" onclick="aba.materiais='local';render()">Onde está</button></div>
   <div class="row noprint" style="margin-bottom:10px"><input id="qBusca" placeholder="Buscar nome ou código" value="${esc(busca)}" oninput="busca=this.value;listaMat()">
     <select class="n" style="width:40%" onchange="etapaSel=this.value;listaMat()"><option value="">Todas as etapas</option>${etapas().map(g => `<option ${g === etapaSel ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
+  ${S.insumos.length ? `<div class="field noprint"><select onchange="grupoSel=this.value;listaMat()"><option value="">Todos os grupos do Sienge</option>${[...new Set(S.materiais.map(grupoDe).filter(Boolean))].sort().map(g => `<option ${g === grupoSel ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>` : ""}
   ${aba.materiais === "local" ? `<button class="btn sec noprint" style="margin-bottom:10px" onclick="print()">Imprimir</button>` : `<button class="btn sec noprint" style="margin-bottom:10px" onclick="dlgMaterial()">+ Material</button>`}
   <div id="lm"></div>`;
 }
 function listaMat(C = calc()) {
   const q = busca.trim().toUpperCase();
   const naEtapa = etapaSel && new Set(S.servicos.filter(s => (s.etapa || "Sem etapa") === etapaSel).flatMap(s => s.itens.map(i => i.mat)));
-  const ms = S.materiais.filter(m => (!naEtapa || naEtapa.has(m.id)) && (!q || (m.nome + " " + m.cod).toUpperCase().includes(q))).sort(porNome);
-  const linha = m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc(m.cod)}${aba.materiais === "lista" ? " · " + esc(locaisDe(m)) : ""}</small></span>
+  const ms = S.materiais.filter(m => (!naEtapa || naEtapa.has(m.id)) && (!grupoSel || grupoDe(m) === grupoSel) && (!q || (m.nome + " " + m.cod).toUpperCase().includes(q))).sort(porNome);
+  const linha = m => `<div class="it" onclick="ir('material','${m.id}')"><span class="lb">${esc(m.nome)}<small>${esc([m.cod, grupoDe(m)].filter(Boolean).join(" · "))}${aba.materiais === "lista" ? " · " + esc(locaisDe(m)) : ""}</small></span>
     <span class="q">${fN(C.saldo[m.id])} ${esc(m.un)}</span></div>`;
   if (aba.materiais === "lista") { lm.innerHTML = `<div class="card">${ms.map(linha).join("") || `<p class="empty">Nenhum material.</p>`}</div>`; return; }
   // onde está: só o que tem saldo, agrupado por local
@@ -523,8 +547,8 @@ function listaMat(C = calc()) {
 
 function material(C) {
   const m = mat(sel); if (!m) { voltar(); return ""; }
-  titulo(m.nome, m.cod);
-  const usos = S.servicos.flatMap(s => s.itens.filter(i => i.mat === m.id).map(i => [s, i]));
+  titulo(m.nome, [m.cod, grupoDe(m)].filter(Boolean).join(" · "));
+  const usos =S.servicos.flatMap(s => s.itens.filter(i => i.mat === m.id).map(i => [s, i]));
   const movs = S.movs.filter(x => x.mat === m.id).sort((a, b) => b.data.localeCompare(a.data));
   const rotMov = x => ({ entrada: "Entrada" + (x.ped ? " · pedido " + esc(S.pedidos.find(p => p.id === x.ped)?.num || "") : ""), saida: "Saída · " + esc(modu(x.mod)?.nome || "") + (x.serv ? " · " + esc(serv(x.serv)?.nome || "") : ""), transf: "Transferência · " + esc(x.obra), ajuste: "Ajuste de conferência" }[x.tipo]);
   const cp = comprarAte(C, aba.hz)[m.id], f = prazoDe(m);
@@ -546,8 +570,11 @@ function apagarMov(id) { if (!confirm("Apagar este lançamento?")) return; S.mov
 function dlgMaterial(id) {
   const m = id ? mat(id) : { nome: "", cod: "", un: "", fator: 1, forn: "", locais: [] };
   D.innerHTML = `<form onsubmit="event.preventDefault();salvarMaterial('${id || ""}')"><h3>${id ? "Editar material" : "Novo material"}</h3>
+    ${S.insumos.length ? `<div class="field"><label>Buscar no catálogo do Sienge</label><input id="mBusca" list="dlIns" placeholder="código ou nome" autocomplete="off" oninput="puxarInsumo(this.value)">
+      <datalist id="dlIns">${S.insumos.map(i => `<option value="${esc(i.cod + " - " + i.nome)}">`).join("")}</datalist>
+      <span class="sub">Preenche código, nome e unidade. Complete o nome com o detalhe (medida, cor...) pra separar no estoque.</span></div>` : ""}
     <div class="field"><label>Nome</label><input id="mNome" required value="${esc(m.nome)}"></div>
-    <div class="row field"><div><label>Código Sienge</label><input id="mCod" value="${esc(m.cod)}"></div><div><label>Unidade do estoque</label><input id="mUn" value="${esc(m.un)}"></div></div>
+    <div class="row field"><div><label>Código Sienge</label><input id="mCod" value="${esc(m.cod)}" oninput="mGrupo.textContent=insumo(this.value)?.grupo||''"><span class="sub" id="mGrupo">${esc(grupoDe(m))}</span></div><div><label>Unidade do estoque</label><input id="mUn" value="${esc(m.un)}"></div></div>
     <div class="row field"><div><label>Fator (por casa → estoque)</label><input id="mFator" type="number" step="any" min="0" value="${m.fator || 1}"></div>
       <div><label>Categoria · fornecedor</label><select id="mForn"><option value="">—</option>${S.fornecedores.slice().sort(porForn).map(f => `<option value="${f.id}" ${f.id === m.forn ? "selected" : ""}>${esc(rotuloForn(f))}${f.prazo ? ` (${f.prazo} dias)` : ""}</option>`).join("")}</select></div></div>
     <p class="muted" style="margin-top:-6px">Fator: use quando a quantidade por casa está numa unidade e o estoque em outra (ex.: barras × kg por barra). Normalmente é 1.</p>
@@ -555,6 +582,10 @@ function dlgMaterial(id) {
     <div class="row"><button type="button" class="btn sec" onclick="D.close()">Cancelar</button><button class="btn">Salvar</button></div>
     ${id ? `<button type="button" class="btn dan" style="margin-top:10px" onclick="excluirMaterial('${id}')">Excluir material</button>` : ""}</form>`;
   D.showModal();
+}
+function puxarInsumo(v) {
+  const i = S.insumos.find(i => i.cod + " - " + i.nome === v); if (!i) return;
+  mCod.value = i.cod; mNome.value = i.nome; mUn.value = i.un; mGrupo.textContent = i.grupo; mNome.focus();
 }
 function salvarMaterial(id) {
   const m = id ? mat(id) : { id: uid(), apelidos: [] };
@@ -796,7 +827,7 @@ function salvarPedido() {
   if (!dele.length && p.fornecedor) S.fornecedores.push(forn = { id: uid(), nome: p.fornecedor, cat: "", prazo: 0 });
   for (const it of p.itens) {
     if (it.mat === "novo") {
-      const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un, fator: 1, locais: [], apelidos: [] };
+      const m = { id: uid(), nome: (it.nome + " " + it.comp).trim(), cod: it.cod, un: it.un || insumo(it.cod)?.un || "", fator: 1, locais: [], apelidos: [] };
       S.materiais.push(m); it.mat = m.id;
     }
     const m = mat(it.mat);
@@ -928,6 +959,8 @@ function ajustes() {
     <p class="muted">Pode usar o mesmo Client ID do app de Assistência. Os dados ficam no arquivo <code>estoque.json</code>, na pasta "Controle de Estoque" do seu Drive.</p>
     <p style="font-size:13px">Estado: <b>${{ off: "desconectado", sync: "sincronizado" + (DRIVE.quando ? " às " + DRIVE.quando : ""), busy: "sincronizando…", err: "erro — " + esc(DRIVE.erro) }[DRIVE.estado]}</b></p>
     <button class="btn" onclick="sincronizar(true)">${DRIVE.estado === "off" ? "Conectar e sincronizar" : "Sincronizar agora"}</button></div>
+  <h2>Catálogo de insumos do Sienge</h2><div class="card"><p class="muted" style="margin-top:0">${S.insumos.length ? `${S.insumos.length} insumos em ${new Set(S.insumos.map(i => i.grupo)).size} grupos.` : "Nenhum catálogo carregado."} É só consulta: o material só entra no estoque quando vier num pedido ou você cadastrar. Pra atualizar, gere de novo o relatório "cadastro de insumos" no Sienge.</p>
+    <button class="btn sec" onclick="fCsv.click()">Importar relatório (.csv)</button></div>
   <h2>Backup</h2><div class="card"><p class="muted" style="margin-top:0">${S.meta.backup ? "Último backup: " + fmt(S.meta.backup) : "Nunca fez backup."}</p>
     <div class="row"><button class="btn" onclick="exportar()">Exportar</button><button class="btn sec" onclick="fBk.click()">Importar</button></div></div>`;
 }
@@ -991,6 +1024,15 @@ function exportar() {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: "application/json" }));
   a.download = `estoque-obra-${hoje()}.json`; a.click(); render();
+}
+function importarInsumos(f) {
+  if (!f) return;
+  f.text().then(t => {
+    const ins = lerInsumosCsv(t.replace(/^﻿/, ""));
+    if (!ins.length) return alert("Não encontrei insumos nesse arquivo. É o relatório \"cadastro de insumos\" do Sienge?");
+    S.insumos = ins; save(); render();
+    alert(`${ins.length} insumos carregados.`);
+  });
 }
 function importarBackup(f) {
   if (!f || !confirm("Substituir todos os dados pelo backup?")) return;

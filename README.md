@@ -13,6 +13,9 @@ Endereço: https://fabianofca26-creator.github.io/Controle_estoque/
   obra (dá pra copiar as atividades de outra obra). Transferência pra uma obra
   cadastrada vira entrada no estoque dela; pedido importado de outra obra
   oferece trocar antes.
+- **Catálogo do Sienge**: o relatório "cadastro de insumos" (CSV) entra em
+  Ajustes como base de consulta (código, nome, unidade, grupo). Não vira
+  estoque: o material nasce num pedido ou no cadastro, que busca na base.
 - **Ajustes**: módulos (quantas casas tipo 1 e tipo 2), fornecedores com prazo
   de entrega, locais de armazenamento, ponto de partida do controle.
 - **Obra**: programação por quinzena (1 a 15, 16 ao fim do mês): em quantas
